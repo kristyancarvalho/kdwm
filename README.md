@@ -18,13 +18,13 @@ The project ships its own DWM base and patchset. It does not attempt to inject p
 ## Features
 
 - Matugen-authoritative wallpaper palette with a mostly monochromatic semantic layer
-- live DWM bar, tag, selected-border, and inactive-border reload through `SIGUSR1`
+- live Matugen DWM bar, Roman-numeral tags, selected-border, and inactive-border reload through `SIGUSR1`
 - existing clients recolored without restarting DWM or the X11 session
 - 10 px inner and outer DWM gaps, including single-client layouts
 - persistent Quickshell dashboard with CPU, memory, network, storage, process, sensor, battery, audio, Bluetooth, and supported NVIDIA GPU telemetry
 - real-time resource graphs and PT-BR interface/date formatting
 - Rofi application and wallpaper launchers driven by the same generated semantic palette
-- Kitty palette reload, Picom transparency, and Wallhaven wallpaper management
+- Kitty palette reload, Picom transparency, Wallhaven Lain preset management, and cached São Paulo temperature
 - timestamped backups and idempotent repository-backed configuration deployment
 
 ## Preview
@@ -159,7 +159,9 @@ kdwm-wallpaper list
 kdwm-wallpaper current
 ```
 
-`Alt+w` opens the themed selector. The default provider/search is configured in `wallpaper/sources.json`. The release default is [Wallhaven xedo8v](https://whvn.cc/xedo8v), a low-complexity dark road composition that leaves the dashboard visually dominant.
+`Alt+w` opens the themed selector. The default provider/search is configured in `wallpaper/sources.json`. The release default is the dark, low-complexity Serial Experiments Lain preset [Wallhaven nrd3wq](https://whvn.cc/nrd3wq), downloaded into the per-user cache rather than redistributed.
+
+The native DWM bar keeps CPU, RAM, volume, cached `SP 23°C`-style temperature, and clock status. Temperature comes from Open-Meteo at most every 20 minutes; a failed refresh keeps the last value or shows `--°C`. Network details remain in the Quickshell dashboard. Tags render as `I` through `IX` in fixed 52 px cells while `Alt+1..9` remains numeric.
 
 ## Keybindings
 

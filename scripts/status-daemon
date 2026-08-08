@@ -3,6 +3,7 @@ set -Eeuo pipefail
 
 previous_total=0
 previous_idle=0
+script_dir=$(cd -- "$(dirname -- "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)
 
 while true; do
   read -r _ user nice system idle iowait irq softirq steal _ </proc/stat
@@ -18,6 +19,7 @@ while true; do
   memory=$(((total_memory - available_memory) * 100 / total_memory))
   volume=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk '{printf "%d%%", $2 * 100; if ($0 ~ /MUTED/) printf "M"}' || true)
   [[ -n "$volume" ]] || volume="--"
-  xsetroot -name " CPU ${cpu}%  |  RAM ${memory}%  |  VOL ${volume}  |  $(date '+%a %d %b  %H:%M') "
+  weather=$("$script_dir/weather-status")
+  xsetroot -name " CPU ${cpu}%  |  RAM ${memory}%  |  VOL ${volume}  |  ${weather}  |  $(date '+%a %d %b  %H:%M') "
   sleep 2
 done

@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+cache_dir="${KDWM_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/kdwm}"
+state_dir="$cache_dir/state"
+cache_file="$state_dir/weather"
+refresh_seconds=1200
+mkdir -p "$state_dir"
+cached=""
+cached_at=0
+if [[ -s "$cache_file" ]]; then
+  IFS=$'\t' read -r cached_at cached <"$cache_file" || true
+fi
+now=$(date +%s)
+if (( now - cached_at >= refresh_seconds )); then
+  value=$(curl --fail --silent --show-error --max-time 5 'https://api.open-meteo.com/v1/forecast?latitude=-23.5505&longitude=-46.6333&current=temperature_2m&temperature_unit=celsius' 2>/dev/null | jq -r '.current.temperature_2m // empty' 2>/dev/null || true)
+  if [[ $value =~ ^-?[0-9]+([.][0-9]+)?$ ]]; then
+    cached=$(printf 'SP %.0f°C' "$value")
+    printf '%s\t%s\n' "$now" "$cached" >"$cache_file.tmp"
+    mv "$cache_file.tmp" "$cache_file"
+  fi
+fi
+printf '%s\n' "${cached:---°C}"

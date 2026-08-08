@@ -34,6 +34,15 @@ download() {
   printf '%s\n' "$file"
 }
 
+default_wallpaper() {
+  local id path file
+  id=$(jq -r '.default.id' "$repo_dir/wallpaper/sources.json")
+  path=$(jq -r '.default.path' "$repo_dir/wallpaper/sources.json")
+  file="$wallpaper_dir/$id.${path##*.}"
+  [[ -f "$file" ]] || curl --fail --location --progress-bar "$path" -o "$file"
+  printf '%s\n' "$file"
+}
+
 set_wallpaper() {
   local file=$1
   file=$(realpath "$file")
@@ -52,11 +61,23 @@ select_wallpaper() {
   set_wallpaper "$(download "$id")"
 }
 
+restore_wallpaper() {
+  local current=
+  [[ -s "$state" ]] && current=$(<"$state")
+  if [[ -n "$current" && -f "$current" ]]; then
+    set_wallpaper "$current"
+  else
+    set_wallpaper "$(default_wallpaper)"
+  fi
+}
+
 case "${1:-select}" in
   refresh) refresh ;;
   list) [[ -s "$index" ]] || refresh; jq -r '.items[] | "\(.id)\t\(.resolution)\t\(.short_url)"' "$index" ;;
   set) set_wallpaper "${2:?path required}" ;;
   random) [[ -s "$index" ]] || refresh; set_wallpaper "$(download "$(jq -r '.items | map(.id) | .[now | floor % length]' "$index")")" ;;
+  default) set_wallpaper "$(default_wallpaper)" ;;
+  restore) restore_wallpaper ;;
   current) cat "$state" 2>/dev/null || true ;;
   select) select_wallpaper ;;
   *) exit 2 ;;

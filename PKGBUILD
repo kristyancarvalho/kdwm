@@ -6,7 +6,7 @@
 
 pkgname=dwm
 pkgver=6.8
-pkgrel=11
+pkgrel=12
 pkgdesc="A dynamic window manager for X"
 url="https://dwm.suckless.org"
 arch=('i686' 'x86_64' 'arm' 'armv7h' 'armv6h' 'aarch64')
@@ -24,6 +24,7 @@ prepare() {
   patch -Np1 -i "$startdir/dwm/patches/0003-clean-status-and-restart.diff"
   patch -Np1 -i "$startdir/dwm/patches/0004-semantic-tag-colors.diff"
   patch -Np1 -i "$startdir/dwm/patches/0005-fresh-xresources-reload.diff"
+  patch -Np1 -i "$startdir/dwm/patches/0006-fixed-tag-width.diff"
   cp -fv "$startdir/dwm/config.h" config.h
 }
 
