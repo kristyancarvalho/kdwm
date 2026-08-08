@@ -11,7 +11,7 @@ import time
 
 
 INTERVAL = 1.0
-CACHE = pathlib.Path("/home/kristyan/.cache/kdwm/state/stats.json")
+CACHE = pathlib.Path(os.environ.get("KDWM_CACHE_DIR", pathlib.Path.home() / ".cache/kdwm")) / "state/stats.json"
 
 
 def read_text(path, default=""):
@@ -206,7 +206,7 @@ def gpu():
                         "temperature": float(fields[4]), "power": float(fields[5]), "clock": float(fields[6])}
             except (ValueError, IndexError):
                 pass
-    return {"available": False, "name": "VMware SVGA II" if pathlib.Path("/sys/module/vmwgfx").exists() else ""}
+    return {"available": False, "name": ""}
 
 
 def process_snapshot(previous, elapsed):

@@ -1,15 +1,19 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-readonly repo_dir=/home/kristyan/src/dwm
-readonly runtime_dir=/home/kristyan/.cache/kdwm
-readonly legacy_dir=/home/kristyan/.cache/dwm-rice
+script_path=$(readlink -f "${BASH_SOURCE[0]}")
+readonly repo_dir="$(cd -- "$(dirname -- "$script_path")/.." && pwd)"
+readonly runtime_dir="${XDG_CACHE_HOME:-$HOME/.cache}/kdwm"
+readonly legacy_dir="${XDG_CACHE_HOME:-$HOME/.cache}/dwm-rice"
 
 export GTK_THEME=Adwaita:dark
 export QT_QPA_PLATFORMTHEME=qt6ct
 export QT_QUICK_CONTROLS_STYLE=Fusion
 export XDG_CURRENT_DESKTOP=kdwm
 export XDG_SESSION_DESKTOP=kdwm
+export KDWM_REPO_DIR="$repo_dir"
+export KDWM_CACHE_DIR="$runtime_dir"
+export PATH="$HOME/.local/bin:$PATH"
 
 ensure_runtime() {
   mkdir -p "$runtime_dir/theme" "$runtime_dir/state" "$runtime_dir/wallpapers" "$runtime_dir/logs"

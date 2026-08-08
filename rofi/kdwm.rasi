@@ -1,4 +1,5 @@
 @import "~/.cache/kdwm/theme/rofi-colors.rasi"
+configuration { show-icons: true; matching: "fuzzy"; }
 * { font: "JetBrains Mono 11"; background-color: transparent; text-color: @kdwm-foreground; }
 window { width: 42%; border: 1px; border-color: @kdwm-border; border-radius: 3px; background-color: @kdwm-background; }
 mainbox { padding: 10px; spacing: 8px; }

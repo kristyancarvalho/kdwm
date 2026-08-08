@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-repo_dir=/home/kristyan/src/dwm
-runtime_dir=/home/kristyan/.cache/kdwm
+script_path=$(readlink -f "${BASH_SOURCE[0]}")
+repo_dir="$(cd -- "$(dirname -- "$script_path")/.." && pwd)"
+runtime_dir="${KDWM_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/kdwm}"
 wallpaper_dir="$runtime_dir/wallpapers"
 index="$wallpaper_dir/index.json"
 state="$runtime_dir/state/current-wallpaper"
