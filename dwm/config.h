@@ -1,10 +1,9 @@
-/* Repository-owned DWM configuration. Runtime colours come from Xresources. */
 static const unsigned int borderpx = 2;
 static const unsigned int snap = 32;
 static const int showbar = 1;
 static const int topbar = 1;
-static const char *fonts[] = { "Sans:size=10" };
-static const char dmenufont[] = "Sans:size=10";
+static const char *fonts[] = { "JetBrains Mono:size=10" };
+static const char dmenufont[] = "JetBrains Mono:size=10";
 static char normfg[8] = "#cdd6f4", normbg[8] = "#1e1e2e", normborder[8] = "#45475a";
 static char selfg[8] = "#1e1e2e", selbg[8] = "#89b4fa", selborder[8] = "#89b4fa";
 static const char *colors[][3] = {
@@ -14,7 +13,7 @@ static const char *colors[][3] = {
 
 static int gappih = 10, gappiv = 10, gappoh = 10, gappov = 10;
 static const int smartgaps = 0;
-static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+static const char *tags[] = { "01", "02", "03", "04", "05", "06", "07", "08", "09" };
 static const Rule rules[] = {
 	{ "Gimp", NULL, NULL, 0, 1, -1 },
 	{ "Firefox", NULL, NULL, 1 << 8, 0, -1 },
@@ -24,7 +23,7 @@ static const int nmaster = 1;
 static const int resizehints = 1;
 static const int lockfullscreen = 1;
 static const int refreshrate = 120;
-static const Layout layouts[] = { { "[]=", tile }, { "><>", NULL }, { "[M]", monocle } };
+static const Layout layouts[] = { { "[T]", tile }, { "[F]", NULL }, { "[M]", monocle } };
 
 #define MODKEY Mod1Mask
 #define TAGKEYS(KEY,TAG) \
@@ -32,12 +31,14 @@ static const Layout layouts[] = { { "[]=", tile }, { "><>", NULL }, { "[M]", mon
 	{ MODKEY|ShiftMask, KEY, tag, {.ui = 1 << TAG} }, { MODKEY|ControlMask|ShiftMask, KEY, toggletag, {.ui = 1 << TAG} },
 #define SHCMD(cmd) { .v = (const char*[]){ "/bin/sh", "-c", cmd, NULL } }
 static char dmenumon[2] = "0";
-static const char *dmenucmd[] = { "rofi", "-show", "drun", "-theme", "~/.config/rofi/dwm-rice.rasi", NULL };
+static const char *dmenucmd[] = { "rofi", "-show", "drun", "-theme", "/home/kristyan/.config/rofi/kdwm.rasi", NULL };
 static const char *termcmd[] = { "kitty", NULL };
 static const char *wallpapercmd[] = { "/home/kristyan/src/dwm/scripts/wallpaper", "select", NULL };
+static const char *restartcmd[] = { "/home/kristyan/src/dwm/scripts/restart-dwm", NULL };
 static const Key keys[] = {
 	{ MODKEY, XK_p, spawn, {.v = dmenucmd} }, { MODKEY|ShiftMask, XK_Return, spawn, {.v = termcmd} },
 	{ MODKEY, XK_w, spawn, {.v = wallpapercmd} }, { MODKEY, XK_b, togglebar, {0} },
+	{ MODKEY|ShiftMask, XK_r, spawn, {.v = restartcmd} },
 	{ MODKEY, XK_j, focusstack, {.i = +1} }, { MODKEY, XK_k, focusstack, {.i = -1} },
 	{ MODKEY, XK_i, incnmaster, {.i = +1} }, { MODKEY, XK_d, incnmaster, {.i = -1} },
 	{ MODKEY, XK_h, setmfact, {.f = -0.05} }, { MODKEY, XK_l, setmfact, {.f = +0.05} },

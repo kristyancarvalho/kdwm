@@ -1,0 +1,10 @@
+@import "/home/kristyan/.cache/kdwm/theme/rofi-colors.rasi"
+* { font: "JetBrains Mono 11"; }
+window { width: 42%; border: 1px; border-color: @kdwm-border; border-radius: 3px; background-color: @kdwm-background; }
+mainbox { padding: 10px; spacing: 8px; }
+inputbar { padding: 8px 10px; background-color: @kdwm-surface; border: 1px; border-color: @kdwm-border; }
+listview { lines: 8; spacing: 3px; }
+element { padding: 8px 10px; border-radius: 2px; }
+element-text { text-color: @kdwm-foreground; }
+element selected.normal { background-color: @kdwm-surface-elevated; }
+element-text selected.normal { text-color: @kdwm-accent; }

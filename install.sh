@@ -15,21 +15,33 @@ backup_link() {
   local source=$1 destination=$2
   mkdir -p "$(dirname "$destination")"
   if [[ -e "$destination" && ! -L "$destination" ]]; then
-    local backup="${destination}.dwm-rice-backup.$(date +%Y%m%d%H%M%S)"
+    local backup="${destination}.kdwm-backup.$(date +%Y%m%d%H%M%S)"
     mv "$destination" "$backup"
     printf 'backed up %s to %s\n' "$destination" "$backup"
   fi
   ln -sfn "$source" "$destination"
 }
 
-install -d -o "$target_user" -g "$target_user" "$target_home/.config" "$target_home/.cache/dwm-rice"
-backup_link "$repo_dir/quickshell" "$target_home/.config/quickshell/dwm-rice"
+remove_legacy_link() {
+  local destination=$1 expected=$2
+  if [[ -L "$destination" && $(readlink "$destination") == "$expected" ]]; then
+    unlink "$destination"
+  fi
+}
+
+install -d -o "$target_user" -g "$target_user" "$target_home/.config" "$target_home/.config/quickshell" "$target_home/.config/picom" "$target_home/.config/kitty" "$target_home/.config/gtk-3.0" "$target_home/.config/gtk-4.0" "$target_home/.config/environment.d" "$target_home/.config/rofi" "$target_home/.config/qt6ct" "$target_home/.cache/kdwm/theme" "$target_home/.cache/kdwm/state" "$target_home/.cache/kdwm/wallpapers" "$target_home/.cache/kdwm/logs"
+remove_legacy_link "$target_home/.config/quickshell/dwm-rice" "$repo_dir/quickshell"
+remove_legacy_link "$target_home/.config/environment.d/90-dwm-rice.conf" "$repo_dir/config/environment.d/90-dwm-rice.conf"
+remove_legacy_link "$target_home/.config/rofi/dwm-rice.rasi" "$repo_dir/rofi/dwm-rice.rasi"
+backup_link "$repo_dir/quickshell" "$target_home/.config/quickshell/kdwm"
 backup_link "$repo_dir/picom/picom.conf" "$target_home/.config/picom/picom.conf"
+backup_link "$repo_dir/kitty/kitty.conf" "$target_home/.config/kitty/kitty.conf"
 backup_link "$repo_dir/config/gtk-3.0/settings.ini" "$target_home/.config/gtk-3.0/settings.ini"
 backup_link "$repo_dir/config/gtk-4.0/settings.ini" "$target_home/.config/gtk-4.0/settings.ini"
-backup_link "$repo_dir/config/environment.d/90-dwm-rice.conf" "$target_home/.config/environment.d/90-dwm-rice.conf"
-backup_link "$repo_dir/rofi/dwm-rice.rasi" "$target_home/.config/rofi/dwm-rice.rasi"
-chown -h "$target_user:$target_user" "$target_home/.config/quickshell/dwm-rice" "$target_home/.config/picom/picom.conf" "$target_home/.config/gtk-3.0/settings.ini" "$target_home/.config/gtk-4.0/settings.ini" "$target_home/.config/environment.d/90-dwm-rice.conf" "$target_home/.config/rofi/dwm-rice.rasi"
+backup_link "$repo_dir/config/environment.d/90-kdwm.conf" "$target_home/.config/environment.d/90-kdwm.conf"
+backup_link "$repo_dir/rofi/kdwm.rasi" "$target_home/.config/rofi/kdwm.rasi"
+backup_link "$repo_dir/config/qt6ct/qt6ct.conf" "$target_home/.config/qt6ct/qt6ct.conf"
+chown -h "$target_user:$target_user" "$target_home/.config/quickshell/kdwm" "$target_home/.config/picom/picom.conf" "$target_home/.config/kitty/kitty.conf" "$target_home/.config/gtk-3.0/settings.ini" "$target_home/.config/gtk-4.0/settings.ini" "$target_home/.config/environment.d/90-kdwm.conf" "$target_home/.config/rofi/kdwm.rasi" "$target_home/.config/qt6ct/qt6ct.conf"
 
 if [[ $(id -u) -eq 0 ]]; then
   runuser -u "$target_user" -- "$repo_dir/scripts/build-package"

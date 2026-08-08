@@ -1,23 +1,24 @@
-# DWM Pywal desktop shell
+# kdwm
 
-This repository is the source of truth for Kristyan's X11 DWM session. It keeps DWM as the window manager, adds 10px smart gaps, and uses a small Quickshell X11 desktop dashboard below normal windows.
+Kristyan's DWM session: a dark, terminal-centric X11 workstation with a runtime Pywal palette, Kitty, Rofi, Picom, and a persistent Quickshell system dashboard.
 
 ## Install
 
-Run `sudo ./install.sh` from this checkout. It safely creates repository-backed links under `/home/kristyan/.config`, builds DWM as `kristyan`, installs the resulting Arch package, and installs the `DWM Rice` SDDM entry. Runtime files live only in `~/.cache/dwm-rice` and `~/.cache/wal`.
+Run `sudo ./install.sh` from this checkout. It creates repository-backed user links under `/home/kristyan/.config`, builds the `dwm` Arch package as `kristyan`, and installs the `kdwm` SDDM session. Runtime state is owned by `kristyan` under `~/.cache/kdwm`:
 
-Dependencies: `dwm`, `quickshell`, `python-pywal`, `picom`, `feh`, `rofi`, `jq`, `curl`, `lm_sensors`, and standard X11 utilities.
+- `wallpapers/` downloaded wallpaper files
+- `theme/` normalized palette files for DWM, Kitty, and Rofi
+- `state/` current wallpaper, metrics snapshot, and change markers
+- `logs/` Quickshell startup output
 
 ## Wallpaper and theme
 
-`scripts/wallpaper refresh` fetches safe-for-work Wallhaven metadata configured in `wallpaper/sources.json`; downloaded images stay in `~/.cache/dwm-rice/wallpapers`.
+Use `scripts/wallpaper refresh`, `select`, `random`, `set PATH`, `list`, or `current`. `Alt+w` opens the wallpaper selector. Each selection applies the image, runs Pywal, normalizes its colors into one restrained accent family, updates Xresources, asks DWM to reload through `SIGUSR1`, and refreshes Kitty.
 
-Use `scripts/wallpaper select`, `random`, `set PATH`, `list`, or `current`. `Alt+w` opens the Rofi selector. Each selection sets the root image, runs Pywal, writes one normalized `theme.json`, merges Xresources, and sends DWM `SIGUSR1`. DWM reloads color objects from its normal event loop—no compilation, restart, or logout.
+`scripts/start-session` migrates usable legacy state once, restores a valid wallpaper/theme when available, otherwise writes a safe fallback palette, starts Picom, Quickshell, and the compact bar status producer, then supervises DWM. The dashboard cannot prevent DWM from launching.
 
-## Shell
+## Desktop behavior
 
-`scripts/start-session` restores the wallpaper/theme, starts Picom, Quickshell, and then DWM. Quickshell owns one long-lived metrics process which streams a JSON snapshot each second; slow hardware probes are cached at their own intervals. The `XPanelWindow` is `aboveWindows: false`, non-focusable, and ignores exclusive space, so normal clients cover it.
+DWM uses 10px inner and outer gaps, including one tiled client. The bar has no fallback version string. `Alt+Shift+r` or `scripts/restart-dwm` requests an intentional restart through a dedicated exit code; the session wrapper relaunches DWM without returning to SDDM and rate-limits repeated failures. Normal wallpaper changes never rebuild or restart it.
 
-Keybindings: `Alt+p` application launcher, `Alt+Shift+Return` terminal, `Alt+w` wallpaper chooser, `Alt+Shift+h/l` reduce/increase gaps.
-
-If Quickshell fails, DWM remains usable; run `quickshell -p /home/kristyan/src/dwm/quickshell` from a terminal to inspect it. Rebuild manually with `sudo -u kristyan scripts/build-package` then `sudo pacman -U dwm-*-x86_64.pkg.tar.zst`.
+Kitty is the default terminal (`Alt+Shift+Return`) with 0.90 background opacity and the generated kdwm palette. `Alt+p` opens the compact dark Rofi launcher. Quickshell runs below normal clients and displays realtime CPU, memory, network, GPU when present, storage, sensor, process, battery, audio, Bluetooth, clock, and system information.

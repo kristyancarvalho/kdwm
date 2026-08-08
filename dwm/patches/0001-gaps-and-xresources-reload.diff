@@ -37,7 +37,7 @@
 +
  void
  keypress(XEvent *e)
-@@ -1038,4 +1052,46 @@
+@@ -1038,4 +1052,47 @@
  }
  
 +static void
@@ -45,7 +45,7 @@
 +{
 +	XrmDatabase db;
 +	XrmValue value;
-+	char *type;
++	char *resource_string, *type;
 +	struct { const char *name; char *value; } resources[] = {
 +		{ "dwm.normfg", normfg }, { "dwm.normbg", normbg },
 +		{ "dwm.normborder", normborder }, { "dwm.selfg", selfg },
@@ -54,7 +54,8 @@
 +	size_t i;
 +
 +	XrmInitialize();
-+	if (!(db = XrmGetDatabase(dpy)))
++	if (!(resource_string = XResourceManagerString(dpy))
++		|| !(db = XrmGetStringDatabase(resource_string)))
 +		return;
 +	for (i = 0; i < LENGTH(resources); i++)
 +		if (XrmGetResource(db, resources[i].name, "Dwm.Color", &type, &value)
@@ -84,11 +85,12 @@
 +
  void
  manage(Window w, XWindowAttributes *wa)
-@@ -1383,9 +1439,16 @@
+@@ -1383,9 +1439,23 @@
  run(void)
  {
  	XEvent ev;
-+	int event;
++	fd_set descriptors;
++	int event, xfd = ConnectionNumber(dpy);
  	/* main event loop */
  	XSync(dpy, False);
 -	while (running && !XNextEvent(dpy, &ev))
@@ -98,9 +100,15 @@
 +			reloadthemeflag = 0;
 +			reloadtheme();
 +		}
-+		event = XNextEvent(dpy, &ev);
-+		if (!event && handler[ev.type])
++		FD_ZERO(&descriptors);
++		FD_SET(xfd, &descriptors);
++		if (select(xfd + 1, &descriptors, NULL, NULL, NULL) <= 0)
++			continue;
++		while (running && XPending(dpy)) {
++			event = XNextEvent(dpy, &ev);
++			if (!event && handler[ev.type])
  			handler[ev.type](&ev); /* call handler */
++		}
 +	}
  }
 @@ -1545,2 +1604,6 @@

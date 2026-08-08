@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-"""Efficient central metrics stream for the Quickshell dashboard."""
-
 import glob
 import json
 import os
@@ -13,7 +11,7 @@ import time
 
 
 INTERVAL = 1.0
-CACHE = pathlib.Path("/home/kristyan/.cache/dwm-rice/stats.json")
+CACHE = pathlib.Path("/home/kristyan/.cache/kdwm/state/stats.json")
 
 
 def read_text(path, default=""):
@@ -169,7 +167,7 @@ def battery():
 def audio():
     if not shutil.which("wpctl"):
         return {"available": False}
-    volume = command(["wpctl", "get-volume", "@DEFAULT_AUDIO_SINK@"])  # cheap five-second probe
+    volume = command(["wpctl", "get-volume", "@DEFAULT_AUDIO_SINK@"])
     if not volume:
         return {"available": False}
     parts = volume.split()
@@ -177,7 +175,7 @@ def audio():
         percent = round(float(parts[1]) * 100)
     except (IndexError, ValueError):
         percent = 0
-    details = command(["wpctl", "inspect", "@DEFAULT_AUDIO_SINK@"])  # resolve the selected sink
+    details = command(["wpctl", "inspect", "@DEFAULT_AUDIO_SINK@"])
     device = "Audio output"
     for line in details.splitlines():
         if "node.description" in line:

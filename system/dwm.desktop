@@ -1,6 +1,6 @@
 [Desktop Entry]
-Name=DWM Rice
-Comment=Dynamic window manager with Pywal desktop shell
+Name=kdwm
+Comment=Kristyan's DWM session
 Exec=/home/kristyan/src/dwm/scripts/start-session
 Icon=dwm
 Type=XSession

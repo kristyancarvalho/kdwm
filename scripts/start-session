@@ -1,10 +1,79 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-repo=/home/kristyan/src/dwm
-cache=/home/kristyan/.cache/dwm-rice
-mkdir -p "$cache"
-[[ -f "$cache/current-wallpaper" ]] && feh --no-fehbg --bg-fill "$(cat "$cache/current-wallpaper")" || true
-[[ -f "$cache/current-wallpaper" && -f "$cache/theme.json" ]] && "$repo/scripts/apply-theme" "$(cat "$cache/current-wallpaper")" || true
-pgrep -x picom >/dev/null || picom --config "$repo/picom/picom.conf" --daemon
-quickshell -p "$repo/quickshell" --no-duplicate --daemonize || true
-exec /usr/bin/dwm
+
+readonly repo_dir=/home/kristyan/src/dwm
+readonly runtime_dir=/home/kristyan/.cache/kdwm
+readonly legacy_dir=/home/kristyan/.cache/dwm-rice
+
+export GTK_THEME=Adwaita:dark
+export QT_QPA_PLATFORMTHEME=qt6ct
+export QT_QUICK_CONTROLS_STYLE=Fusion
+export XDG_CURRENT_DESKTOP=kdwm
+export XDG_SESSION_DESKTOP=kdwm
+
+ensure_runtime() {
+  mkdir -p "$runtime_dir/theme" "$runtime_dir/state" "$runtime_dir/wallpapers" "$runtime_dir/logs"
+  if [[ ! -s "$runtime_dir/state/current-wallpaper" && -s "$legacy_dir/current-wallpaper" ]]; then
+    cp "$legacy_dir/current-wallpaper" "$runtime_dir/state/current-wallpaper"
+  fi
+  if [[ -d "$legacy_dir/wallpapers" ]]; then
+    cp -an "$legacy_dir/wallpapers/." "$runtime_dir/wallpapers/" 2>/dev/null || true
+  fi
+}
+
+restore_theme() {
+  local wallpaper=
+  [[ -s "$runtime_dir/state/current-wallpaper" ]] && wallpaper=$(<"$runtime_dir/state/current-wallpaper")
+  if [[ -n "$wallpaper" && -r "$wallpaper" ]]; then
+    feh --no-fehbg --bg-fill "$wallpaper"
+    "$repo_dir/scripts/apply-theme" "$wallpaper" || true
+  else
+    "$repo_dir/scripts/generate-theme"
+    xrdb -merge "$runtime_dir/theme/colors.Xresources"
+  fi
+}
+
+start_picom() {
+  pgrep -x picom >/dev/null || picom --config "$repo_dir/picom/picom.conf" --daemon || true
+}
+
+start_quickshell() {
+  if pgrep -u "$(id -u)" -f "^quickshell -p $repo_dir/quickshell( |$)" >/dev/null; then
+    return
+  fi
+  quickshell -p "$repo_dir/quickshell" --no-duplicate --daemonize >>"$runtime_dir/logs/quickshell.log" 2>&1 || true
+}
+
+start_status() {
+  if pgrep -u "$(id -u)" -f "$repo_dir/scripts/status-daemon" >/dev/null; then
+    return
+  fi
+  "$repo_dir/scripts/status-daemon" &
+}
+
+run_dwm() {
+  local exit_code started now restarts=0
+  while true; do
+    started=$SECONDS
+    if /usr/bin/dwm; then
+      exit_code=0
+    else
+      exit_code=$?
+    fi
+    [[ $exit_code -eq 42 ]] || return "$exit_code"
+    now=$SECONDS
+    if (( now - started < 5 )); then
+      ((restarts += 1))
+    else
+      restarts=0
+    fi
+    (( restarts < 4 )) || return 1
+  done
+}
+
+ensure_runtime
+restore_theme
+start_picom
+start_quickshell
+start_status
+run_dwm
