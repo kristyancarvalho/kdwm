@@ -16,7 +16,7 @@ Use `scripts/wallpaper select`, `random`, `set PATH`, `list`, or `current`. `Alt
 
 ## Shell
 
-`scripts/start-session` restores the wallpaper/theme, starts Picom, a single metrics producer, Quickshell, and then DWM. The Quickshell `XPanelWindow` is `aboveWindows: false`, non-focusable, and ignores exclusive space, so normal clients cover it. Dashboard cards refresh from one JSON snapshot per second and gracefully omit unavailable sensors.
+`scripts/start-session` restores the wallpaper/theme, starts Picom, Quickshell, and then DWM. Quickshell owns one long-lived metrics process which streams a JSON snapshot each second; slow hardware probes are cached at their own intervals. The `XPanelWindow` is `aboveWindows: false`, non-focusable, and ignores exclusive space, so normal clients cover it.
 
 Keybindings: `Alt+p` application launcher, `Alt+Shift+Return` terminal, `Alt+w` wallpaper chooser, `Alt+Shift+h/l` reduce/increase gaps.
 

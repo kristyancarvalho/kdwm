@@ -1,2 +1,296 @@
-#!/usr/bin/env bash
-while :; do /home/kristyan/src/dwm/scripts/system-stats || true; sleep 1; done
+#!/usr/bin/env python3
+"""Efficient central metrics stream for the Quickshell dashboard."""
+
+import glob
+import json
+import os
+import pathlib
+import platform
+import shutil
+import socket
+import subprocess
+import time
+
+
+INTERVAL = 1.0
+CACHE = pathlib.Path("/home/kristyan/.cache/dwm-rice/stats.json")
+
+
+def read_text(path, default=""):
+    try:
+        return pathlib.Path(path).read_text(encoding="utf-8").strip()
+    except (OSError, UnicodeError):
+        return default
+
+
+def command(args, timeout=1.5):
+    try:
+        return subprocess.run(args, check=False, capture_output=True, text=True,
+                              timeout=timeout).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return ""
+
+
+def cpu_times():
+    totals = []
+    for line in read_text("/proc/stat").splitlines():
+        fields = line.split()
+        if fields and (fields[0] == "cpu" or fields[0].startswith("cpu") and fields[0][3:].isdigit()):
+            values = [int(value) for value in fields[1:]]
+            idle = values[3] + (values[4] if len(values) > 4 else 0)
+            totals.append((sum(values), idle))
+    return totals
+
+
+def cpu_usage(previous, current):
+    result = []
+    for old, new in zip(previous, current):
+        total = new[0] - old[0]
+        idle = new[1] - old[1]
+        result.append(round(100 * (total - idle) / total, 1) if total > 0 else 0)
+    return result
+
+
+def memory():
+    values = {}
+    for line in read_text("/proc/meminfo").splitlines():
+        key, value = line.split(":", 1)
+        values[key] = int(value.split()[0]) * 1024
+    total = values.get("MemTotal", 0)
+    available = values.get("MemAvailable", 0)
+    used = max(0, total - available)
+    return {"percent": round(100 * used / total, 1) if total else 0,
+            "used": used, "total": total, "cached": values.get("Cached", 0)}
+
+
+def default_interface():
+    for line in read_text("/proc/net/route").splitlines()[1:]:
+        fields = line.split()
+        if len(fields) > 3 and fields[1] == "00000000" and int(fields[3], 16) & 2:
+            return fields[0]
+    return ""
+
+
+def network_bytes(interface):
+    for line in read_text("/proc/net/dev").splitlines():
+        if ":" in line:
+            name, values = line.split(":", 1)
+            if name.strip() == interface:
+                fields = values.split()
+                return int(fields[0]), int(fields[8])
+    return 0, 0
+
+
+def ip_address():
+    probe = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        probe.connect(("1.1.1.1", 80))
+        return probe.getsockname()[0]
+    except OSError:
+        return ""
+    finally:
+        probe.close()
+
+
+def frequency_mhz():
+    values = []
+    for path in glob.glob("/sys/devices/system/cpu/cpu[0-9]*/cpufreq/scaling_cur_freq"):
+        try:
+            values.append(int(read_text(path)) / 1000)
+        except ValueError:
+            pass
+    if values:
+        return round(sum(values) / len(values))
+    for line in read_text("/proc/cpuinfo").splitlines():
+        if line.startswith("cpu MHz"):
+            try:
+                values.append(float(line.split(":", 1)[1]))
+            except ValueError:
+                pass
+    return round(sum(values) / len(values)) if values else 0
+
+
+def temperatures():
+    found = []
+    for directory in glob.glob("/sys/class/hwmon/hwmon*"):
+        chip = read_text(f"{directory}/name", "sensor")
+        if chip in ("BAT0-acpi-0", "acpi"):
+            continue
+        for path in glob.glob(f"{directory}/temp*_input"):
+            try:
+                value = float(read_text(path)) / 1000
+            except ValueError:
+                continue
+            if not 0 < value < 130:
+                continue
+            stem = path[:-6]
+            label = read_text(stem + "label", chip).replace("Package id 0", "CPU")
+            found.append({"label": label, "value": round(value, 1)})
+    return found[:6]
+
+
+def filesystems():
+    result = []
+    sources = {}
+    for line in read_text("/proc/self/mountinfo").splitlines():
+        fields = line.split()
+        if "-" in fields:
+            separator = fields.index("-")
+            sources[fields[4]] = fields[separator + 2]
+    root_source = sources.get("/", "")
+    for mount in ("/", "/home"):
+        if mount == "/home" and sources.get(mount, root_source) == root_source:
+            continue
+        try:
+            stat = os.statvfs(mount)
+        except OSError:
+            continue
+        total = stat.f_blocks * stat.f_frsize
+        free = stat.f_bavail * stat.f_frsize
+        used = total - free
+        result.append({"mount": mount, "percent": round(100 * used / total, 1),
+                       "used": used, "free": free, "total": total})
+    return result
+
+
+def battery():
+    for directory in glob.glob("/sys/class/power_supply/*"):
+        if read_text(f"{directory}/type") != "Battery":
+            continue
+        try:
+            percent = int(read_text(f"{directory}/capacity"))
+        except ValueError:
+            continue
+        return {"available": True, "percent": percent,
+                "status": read_text(f"{directory}/status", "Unknown")}
+    return {"available": False}
+
+
+def audio():
+    if not shutil.which("wpctl"):
+        return {"available": False}
+    volume = command(["wpctl", "get-volume", "@DEFAULT_AUDIO_SINK@"])  # cheap five-second probe
+    if not volume:
+        return {"available": False}
+    parts = volume.split()
+    try:
+        percent = round(float(parts[1]) * 100)
+    except (IndexError, ValueError):
+        percent = 0
+    details = command(["wpctl", "inspect", "@DEFAULT_AUDIO_SINK@"])  # resolve the selected sink
+    device = "Audio output"
+    for line in details.splitlines():
+        if "node.description" in line:
+            device = line.split("=", 1)[-1].strip().strip('"')
+            break
+    return {"available": True, "percent": percent, "muted": "MUTED" in volume, "device": device}
+
+
+def bluetooth():
+    if not shutil.which("bluetoothctl"):
+        return {"available": False}
+    show = command(["bluetoothctl", "show"])
+    if not show:
+        return {"available": False}
+    powered = "Powered: yes" in show
+    connected = powered and "Connected: yes" in command(["bluetoothctl", "devices", "Connected"])
+    return {"available": True, "powered": powered, "connected": connected}
+
+
+def gpu():
+    if shutil.which("nvidia-smi"):
+        output = command(["nvidia-smi", "--query-gpu=name,utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw,clocks.current.graphics", "--format=csv,noheader,nounits"])
+        if output:
+            fields = [field.strip() for field in output.splitlines()[0].split(",")]
+            try:
+                return {"available": True, "name": fields[0], "usage": float(fields[1]),
+                        "vramUsed": float(fields[2]) * 1048576, "vramTotal": float(fields[3]) * 1048576,
+                        "temperature": float(fields[4]), "power": float(fields[5]), "clock": float(fields[6])}
+            except (ValueError, IndexError):
+                pass
+    return {"available": False, "name": "VMware SVGA II" if pathlib.Path("/sys/module/vmwgfx").exists() else ""}
+
+
+def process_snapshot(previous, elapsed):
+    current = {}
+    rows = []
+    page_size = os.sysconf("SC_PAGE_SIZE")
+    clock_ticks = os.sysconf("SC_CLK_TCK")
+    for directory in glob.glob("/proc/[0-9]*"):
+        pid = directory.rsplit("/", 1)[-1]
+        try:
+            raw_stat = read_text(f"{directory}/stat")
+            stat = raw_stat[raw_stat.rfind(") ") + 2:].split()
+            ticks = int(stat[11]) + int(stat[12])
+            rss = int(stat[21]) * page_size
+            name = read_text(f"{directory}/comm", pid)
+        except (IndexError, ValueError):
+            continue
+        current[pid] = ticks
+        old = previous.get(pid, ticks)
+        cpu = max(0, 100 * (ticks - old) / clock_ticks / max(elapsed, 0.1))
+        rows.append({"name": name[:18], "cpu": round(cpu, 1), "memory": rss})
+    rows.sort(key=lambda row: (row["cpu"], row["memory"]), reverse=True)
+    return current, rows[:4]
+
+
+static = {
+    "hostname": platform.node(),
+    "kernel": platform.release(),
+    "os": "Arch Linux",
+    "wm": "DWM",
+    "packages": len(command(["pacman", "-Qq"], timeout=4).splitlines()),
+    "cpuModel": next((line.split(":", 1)[1].strip() for line in read_text("/proc/cpuinfo").splitlines() if line.startswith("model name")), "CPU"),
+}
+previous_cpu = cpu_times()
+interface = default_interface()
+previous_network = network_bytes(interface)
+previous_processes = {}
+last_tick = time.monotonic()
+slow = {"storage": filesystems(), "temperatures": temperatures(), "battery": battery(),
+        "audio": audio(), "bluetooth": bluetooth(), "gpu": gpu(), "ip": ip_address(), "processes": []}
+counter = 0
+CACHE.parent.mkdir(parents=True, exist_ok=True)
+
+while True:
+    started = time.monotonic()
+    elapsed = max(started - last_tick, 0.1)
+    last_tick = started
+    current_cpu = cpu_times()
+    usage = cpu_usage(previous_cpu, current_cpu)
+    previous_cpu = current_cpu
+    new_interface = default_interface()
+    if new_interface != interface:
+        interface = new_interface
+        previous_network = network_bytes(interface)
+    current_network = network_bytes(interface)
+    down = max(0, round((current_network[0] - previous_network[0]) / elapsed))
+    up = max(0, round((current_network[1] - previous_network[1]) / elapsed))
+    previous_network = current_network
+
+    if counter % 2 == 0:
+        slow["gpu"] = gpu()
+    if counter % 3 == 0:
+        slow["temperatures"] = temperatures()
+    if counter % 5 == 0:
+        slow["battery"] = battery()
+        slow["audio"] = audio()
+        slow["bluetooth"] = bluetooth()
+        previous_processes, slow["processes"] = process_snapshot(previous_processes, 5 if counter else 1)
+        slow["ip"] = ip_address()
+    if counter % 15 == 0:
+        slow["storage"] = filesystems()
+
+    uptime = float(read_text("/proc/uptime", "0").split()[0])
+    load = [round(value, 2) for value in os.getloadavg()]
+    payload = {**static, "timestamp": int(time.time()), "cpu": {"usage": usage[0] if usage else 0,
+               "cores": usage[1:], "frequency": frequency_mhz(), "load": load},
+               "memory": memory(), "network": {"interface": interface, "ip": slow["ip"],
+               "connected": bool(interface), "download": down, "upload": up}, "uptime": uptime, **slow}
+    line = json.dumps(payload, separators=(",", ":"))
+    temporary = CACHE.with_suffix(".json.tmp")
+    temporary.write_text(line + "\n", encoding="utf-8")
+    os.replace(temporary, CACHE)
+    print(line, flush=True)
+    counter += 1
+    time.sleep(max(0, INTERVAL - (time.monotonic() - started)))

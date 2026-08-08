@@ -1,14 +1,31 @@
 import QtQuick
+
 Rectangle {
-  required property var theme
-  property string title: ""
-  property string value: ""
-  property string detail: ""
-  radius: 16; color: Qt.rgba(theme.surface.r, theme.surface.g, theme.surface.b, 0.78)
-  border.width: 1; border.color: Qt.rgba(theme.border.r, theme.border.g, theme.border.b, 0.72)
-  Column { anchors.fill: parent; anchors.margins: 22; spacing: 7
-    Text { text: parent.parent.title.toUpperCase(); color: parent.parent.theme.mutedForeground; font.pixelSize: 11; font.bold: true; font.letterSpacing: 1.4 }
-    Text { text: parent.parent.value; color: parent.parent.theme.foreground; font.pixelSize: 28; font.bold: true; elide: Text.ElideRight; width: parent.width }
-    Text { text: parent.parent.detail; color: parent.parent.theme.accent; font.pixelSize: 12; wrapMode: Text.Wrap; width: parent.width }
-  }
+    id: card
+    required property var theme
+    property string title: ""
+    property color accentColor: theme.accent
+    default property alias contents: content.data
+    property color surfaceColor: theme.surface
+    property color borderColor: theme.border
+
+    radius: 14
+    color: Qt.rgba(surfaceColor.r, surfaceColor.g, surfaceColor.b, 0.80)
+    border.width: 1
+    border.color: Qt.rgba(borderColor.r, borderColor.g, borderColor.b, 0.46)
+
+    Rectangle {
+        width: 3; height: 18; radius: 2
+        color: card.accentColor
+        anchors { left: parent.left; top: parent.top; leftMargin: 16; topMargin: 15 }
+    }
+    Text {
+        text: card.title.toUpperCase(); color: card.theme.mutedForeground
+        font { pixelSize: 10; bold: true; letterSpacing: 1.6 }
+        anchors { left: parent.left; top: parent.top; leftMargin: 27; topMargin: 16 }
+    }
+    Item {
+        id: content
+        anchors { fill: parent; leftMargin: 16; rightMargin: 16; topMargin: 39; bottomMargin: 14 }
+    }
 }
