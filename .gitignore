@@ -1,0 +1,12 @@
+# Arch build outputs
+/pkg/
+/src/
+/*.pkg.tar.*
+/*.tar.zst
+/*.log
+
+# Local/runtime data only
+/.cache/
+/.wal/
+*.qmlc
+
