@@ -13,7 +13,7 @@ static const char *colors[][3] = {
 };
 
 static int gappih = 10, gappiv = 10, gappoh = 10, gappov = 10;
-static const int smartgaps = 1;
+static const int smartgaps = 0;
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 static const Rule rules[] = {
 	{ "Gimp", NULL, NULL, 0, 1, -1 },
