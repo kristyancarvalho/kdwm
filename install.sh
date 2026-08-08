@@ -129,6 +129,13 @@ install_dependencies() {
 }
 
 build_dwm() {
+  local desired_version installed_version
+  desired_version=$(awk '/^[[:space:]]*pkgver =/ {version=$3} /^[[:space:]]*pkgrel =/ {release=$3} END {print version "-" release}' "$repo_dir/.SRCINFO")
+  installed_version=$(pacman -Q dwm 2>/dev/null | awk '{print $2}' || true)
+  if [[ -n "$desired_version" && $installed_version == "$desired_version" ]]; then
+    printf 'DWM %s is already installed.\n' "$installed_version"
+    return 0
+  fi
   if ((!dry_run)) && ! runuser -u "$target_user" -- test -w "$repo_dir"; then
     printf '%s must be writable by %s for makepkg.\n' "$repo_dir" "$target_user" >&2
     exit 1
