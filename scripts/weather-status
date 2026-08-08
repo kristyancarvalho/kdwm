@@ -2,20 +2,22 @@
 set -Eeuo pipefail
 cache_dir="${KDWM_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/kdwm}"
 state_dir="$cache_dir/state"
-cache_file="$state_dir/weather"
+cache_file="$state_dir/weather.json"
 refresh_seconds=1200
 mkdir -p "$state_dir"
 cached=""
 cached_at=0
 if [[ -s "$cache_file" ]]; then
-  IFS=$'\t' read -r cached_at cached <"$cache_file" || true
+  cached_at=$(jq -r '.updatedAt // 0' "$cache_file" 2>/dev/null || printf 0)
+  cached=$(jq -r '.bar // empty' "$cache_file" 2>/dev/null || true)
 fi
 now=$(date +%s)
 if (( now - cached_at >= refresh_seconds )); then
-  value=$(curl --fail --silent --show-error --max-time 5 'https://api.open-meteo.com/v1/forecast?latitude=-23.5505&longitude=-46.6333&current=temperature_2m&temperature_unit=celsius' 2>/dev/null | jq -r '.current.temperature_2m // empty' 2>/dev/null || true)
+  response=$(curl --fail --silent --show-error --max-time 5 'https://api.open-meteo.com/v1/forecast?latitude=-23.5505&longitude=-46.6333&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=America%2FSao_Paulo&temperature_unit=celsius' 2>/dev/null || true)
+  value=$(jq -r '.current.temperature_2m // empty' <<<"$response" 2>/dev/null || true)
   if [[ $value =~ ^-?[0-9]+([.][0-9]+)?$ ]]; then
     cached=$(printf 'SP %.0f°C' "$value")
-    printf '%s\t%s\n' "$now" "$cached" >"$cache_file.tmp"
+    jq -n --argjson updatedAt "$now" --arg bar "$cached" --argjson temperature "$value" --argjson apparent "$(jq '.current.apparent_temperature // 0' <<<"$response")" --argjson humidity "$(jq '.current.relative_humidity_2m // 0' <<<"$response")" --argjson code "$(jq '.current.weather_code // -1' <<<"$response")" --argjson maximum "$(jq '.daily.temperature_2m_max[0] // 0' <<<"$response")" --argjson minimum "$(jq '.daily.temperature_2m_min[0] // 0' <<<"$response")" '{city:"São Paulo",updatedAt:$updatedAt,bar:$bar,temperature:$temperature,apparentTemperature:$apparent,humidity:$humidity,weatherCode:$code,maximum:$maximum,minimum:$minimum}' >"$cache_file.tmp"
     mv "$cache_file.tmp" "$cache_file"
   fi
 fi
