@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+repo_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+[[ $(id -u) -ne 0 ]] || { echo 'makepkg must run as kristyan, not root.' >&2; exit 1; }
+cd "$repo_dir"
+makepkg --syncdeps --cleanbuild --noconfirm
+
