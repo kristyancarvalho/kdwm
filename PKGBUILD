@@ -6,7 +6,7 @@
 
 pkgname=dwm
 pkgver=6.8
-pkgrel=4
+pkgrel=5
 pkgdesc="A dynamic window manager for X"
 url="https://dwm.suckless.org"
 arch=('i686' 'x86_64' 'arm' 'armv7h' 'armv6h' 'aarch64')
@@ -20,6 +20,7 @@ sha256sums=('bcf540589ad174d4073f4efa658828411e2f5ba63196cfaf6b71363700f590b7')
 prepare() {
   cd "$srcdir/$pkgname-$pkgver"
   patch -Np1 -i "$startdir/dwm/patches/0001-gaps-and-xresources-reload.diff"
+  patch -Np1 -i "$startdir/dwm/patches/0002-ignore-desktop-panel.diff"
   cp -fv "$startdir/dwm/config.h" config.h
 }
 

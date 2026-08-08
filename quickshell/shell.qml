@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.X11
 import Quickshell.Io
+import "components"
 
 ShellRoot {
   id: root
@@ -25,7 +26,7 @@ ShellRoot {
           ["Network", root.stats.interface, "↓ " + root.stats.download + " B/s   ↑ " + root.stats.upload + " B/s"],
           ["System", root.stats.hostname, root.stats.uptime + " · " + Qt.formatDateTime(new Date(), "ddd, dd MMM · hh:mm")],
           ["GPU", "Adaptive", "NVIDIA/other GPU metrics appear when a provider is available"]
-        ]; delegate: Card { theme: root.palette; title: modelData[0]; value: modelData[1]; detail: modelData[2]; width: (parent.width - (parent.columns - 1) * parent.spacing) / parent.columns; height: (parent.height - parent.spacing) / 2 }
+        ]; delegate: Card { required property var modelData; theme: root.palette; title: modelData[0]; value: modelData[1]; detail: modelData[2]; width: (parent.width - (parent.columns - 1) * parent.spacing) / parent.columns; height: (parent.height - parent.spacing) / 2 }
         }
       }
     }

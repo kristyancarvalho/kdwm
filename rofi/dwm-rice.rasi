@@ -1,0 +1,5 @@
+* { background: #1e1e2e; background-alt: #313244; foreground: #cdd6f4; selected: #89b4fa; }
+window { width: 42%; border: 2px; border-color: @selected; border-radius: 14px; background-color: @background; }
+listview { lines: 8; spacing: 8px; }
+element { padding: 10px; border-radius: 8px; }
+element selected { background-color: @background-alt; text-color: @selected; }

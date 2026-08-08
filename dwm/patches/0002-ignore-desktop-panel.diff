@@ -1,0 +1,39 @@
+--- a/dwm.c
++++ b/dwm.c
+@@ -177,2 +177,3 @@
+ static void incnmaster(const Arg *arg);
++static int isdock(Window w);
+ static void keypress(XEvent *e);
+@@ -1029,6 +1030,32 @@
+ }
+ 
++int
++isdock(Window w)
++{
++	Atom actual, dock;
++	int format;
++	unsigned long n, extra, i;
++	unsigned char *data = NULL;
++
++	dock = XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_DOCK", False);
++	if (XGetWindowProperty(dpy, w, netatom[NetWMWindowType], 0L, 16L, False,
++		XA_ATOM, &actual, &format, &n, &extra, &data) != Success)
++		return 0;
++	for (i = 0; data && i < n; i++)
++		if (((Atom *)data)[i] == dock) {
++			XFree(data);
++			return 1;
++		}
++	if (data)
++		XFree(data);
++	return 0;
++}
++
+ void
+ manage(Window w, XWindowAttributes *wa)
+ {
++	if (isdock(w)) {
++		XLowerWindow(dpy, w);
++		return;
++	}
+ 	Client *c, *t = NULL;
