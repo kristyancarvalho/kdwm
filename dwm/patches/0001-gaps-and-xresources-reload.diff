@@ -1,0 +1,169 @@
+--- a/dwm.c
++++ b/dwm.c
+@@ -30,3 +30,4 @@
+ #include <X11/Xatom.h>
+ #include <X11/Xlib.h>
++#include <X11/Xresource.h>
+ #include <X11/Xproto.h>
+@@ -177,2 +178,3 @@
+ static void incnmaster(const Arg *arg);
++static void incgaps(const Arg *arg);
+ static void keypress(XEvent *e);
+@@ -181,2 +183,4 @@
+ static void mappingnotify(XEvent *e);
++static void loadxrdb(void);
++static void reloadtheme(void);
+ static void monocle(Monitor *m);
+@@ -206,2 +210,3 @@
+ static void seturgent(Client *c, int urg);
++static void sigreload(int unused);
+ static void showhide(Client *c);
+@@ -262,2 +267,3 @@
+ static int running = 1;
++static volatile sig_atomic_t reloadthemeflag = 0;
+ static Cur *cursor[CurLast];
+@@ -824,4 +830,14 @@
+ }
+ 
++static void
++incgaps(const Arg *arg)
++{
++	gappih = MAX(0, gappih + arg->i);
++	gappiv = MAX(0, gappiv + arg->i);
++	gappoh = MAX(0, gappoh + arg->i);
++	gappov = MAX(0, gappov + arg->i);
++	arrange(selmon);
++}
++
+ void
+ keypress(XEvent *e)
+@@ -1038,4 +1052,46 @@
+ }
+ 
++static void
++loadxrdb(void)
++{
++	XrmDatabase db;
++	XrmValue value;
++	char *type;
++	struct { const char *name; char *value; } resources[] = {
++		{ "dwm.normfg", normfg }, { "dwm.normbg", normbg },
++		{ "dwm.normborder", normborder }, { "dwm.selfg", selfg },
++		{ "dwm.selbg", selbg }, { "dwm.selborder", selborder },
++	};
++	size_t i;
++
++	XrmInitialize();
++	if (!(db = XrmGetDatabase(dpy)))
++		return;
++	for (i = 0; i < LENGTH(resources); i++)
++		if (XrmGetResource(db, resources[i].name, "Dwm.Color", &type, &value)
++			&& value.addr && value.size < 8)
++			snprintf(resources[i].value, 8, "%s", value.addr);
++	XrmDestroyDatabase(db);
++}
++
++static void
++reloadtheme(void)
++{
++	Monitor *m;
++	Client *c;
++	size_t i;
++
++	loadxrdb();
++	for (i = 0; i < LENGTH(colors); i++)
++		drw_scm_free(drw, scheme[i], 3);
++	for (i = 0; i < LENGTH(colors); i++)
++		scheme[i] = drw_scm_create(drw, colors[i], 3);
++	for (m = mons; m; m = m->next)
++		for (c = m->clients; c; c = c->next)
++			XSetWindowBorder(dpy, c->win, (m == selmon && c == selmon->sel)
++				? scheme[SchemeSel][ColBorder].pixel : scheme[SchemeNorm][ColBorder].pixel);
++	drawbars();
++}
++
+ void
+ manage(Window w, XWindowAttributes *wa)
+@@ -1383,9 +1439,16 @@
+ run(void)
+ {
+ 	XEvent ev;
++	int event;
+ 	/* main event loop */
+ 	XSync(dpy, False);
+-	while (running && !XNextEvent(dpy, &ev))
+-		if (handler[ev.type])
++	while (running) {
++		if (reloadthemeflag) {
++			reloadthemeflag = 0;
++			reloadtheme();
++		}
++		event = XNextEvent(dpy, &ev);
++		if (!event && handler[ev.type])
+ 			handler[ev.type](&ev); /* call handler */
++	}
+ }
+@@ -1545,2 +1604,6 @@
+ 	sa.sa_handler = SIG_IGN;
+ 	sigaction(SIGCHLD, &sa, NULL);
++	sa.sa_handler = sigreload;
++	sa.sa_flags = 0;
++	sigemptyset(&sa.sa_mask);
++	sigaction(SIGUSR1, &sa, NULL);
+@@ -1580,2 +1643,3 @@
+ 	/* init appearance */
++	loadxrdb();
+ 	scheme = ecalloc(LENGTH(colors), sizeof(Clr *));
+@@ -1676,4 +1740,11 @@
+ }
+ 
++static void
++sigreload(int unused)
++{
++	(void)unused;
++	reloadthemeflag = 1;
++}
++
+ void
+ showhide(Client *c)
+@@ -1689,26 +1759,28 @@
+ tile(Monitor *m)
+ {
+-	unsigned int i, n, h, mw, my, ty;
++	unsigned int i, n, h, mw, my, ty, oe, ie;
+ 	Client *c;
+ 
+ 	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++);
+ 	if (n == 0)
+ 		return;
++	oe = (smartgaps && n == 1) ? 0 : 1;
++	ie = n > 1 ? 1 : 0;
++	mw = m->ww - 2 * oe * gappov;
++	my = ty = oe * gappoh;
+ 
+ 	if (n > m->nmaster)
+-		mw = m->nmaster ? m->ww * m->mfact : 0;
++		mw = m->nmaster ? (mw - ie * gappiv) * m->mfact : 0;
+ 	else
+-		mw = m->ww;
+-	for (i = my = ty = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
++		mw = m->ww - 2 * oe * gappov;
++	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
+ 		if (i < m->nmaster) {
+-			h = (m->wh - my) / (MIN(n, m->nmaster) - i);
+-			resize(c, m->wx, m->wy + my, mw - (2*c->bw), h - (2*c->bw), 0);
+-			if (my + HEIGHT(c) < m->wh)
+-				my += HEIGHT(c);
++			h = (m->wh - 2 * oe * gappoh - my - (MIN(n, m->nmaster) - i - 1) * ie * gappih) / (MIN(n, m->nmaster) - i);
++			resize(c, m->wx + oe * gappov, m->wy + my, mw - 2*c->bw, h - 2*c->bw, 0);
++			my += HEIGHT(c) + ie * gappih;
+ 		} else {
+-			h = (m->wh - ty) / (n - i);
+-			resize(c, m->wx + mw, m->wy + ty, m->ww - mw - (2*c->bw), h - (2*c->bw), 0);
+-			if (ty + HEIGHT(c) < m->wh)
+-				ty += HEIGHT(c);
++			h = (m->wh - 2 * oe * gappoh - ty - (n - i - 1) * ie * gappih) / (n - i);
++			resize(c, m->wx + oe * gappov + mw + ie * gappiv, m->wy + ty, m->ww - mw - 2 * oe * gappov - ie * gappiv - 2*c->bw, h - 2*c->bw, 0);
++			ty += HEIGHT(c) + ie * gappih;
+ 		}
+ }

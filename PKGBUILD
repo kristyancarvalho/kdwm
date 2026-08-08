@@ -6,7 +6,7 @@
 
 pkgname=dwm
 pkgver=6.8
-pkgrel=3
+pkgrel=4
 pkgdesc="A dynamic window manager for X"
 url="https://dwm.suckless.org"
 arch=('i686' 'x86_64' 'arm' 'armv7h' 'armv6h' 'aarch64')
@@ -14,18 +14,13 @@ license=('MIT')
 options=(zipman)
 depends=('libx11' 'libxinerama' 'libxft' 'freetype2')
 install=dwm.install
-source=(dwm.desktop
-        https://dl.suckless.org/dwm/dwm-$pkgver.tar.gz
-        config.h)
-sha256sums=('bc36426772e1471d6dd8c8aed91f288e16949e3463a9933fee6390ee0ccd3f81'
-            'bcf540589ad174d4073f4efa658828411e2f5ba63196cfaf6b71363700f590b7'
-            'SKIP')
+source=(https://dl.suckless.org/dwm/dwm-$pkgver.tar.gz)
+sha256sums=('bcf540589ad174d4073f4efa658828411e2f5ba63196cfaf6b71363700f590b7')
 
 prepare() {
   cd "$srcdir/$pkgname-$pkgver"
-  if [[ -f "$srcdir/config.h" ]]; then
-    cp -fv "$srcdir/config.h" config.h
-  fi
+  patch -Np1 -i "$startdir/dwm/patches/0001-gaps-and-xresources-reload.diff"
+  cp -fv "$startdir/dwm/config.h" config.h
 }
 
 build() {
@@ -38,5 +33,5 @@ package() {
   make PREFIX=/usr DESTDIR="$pkgdir" install
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
   install -Dm644 README "$pkgdir/usr/share/doc/$pkgname/README"
-  install -Dm644 "$srcdir/dwm.desktop" "$pkgdir/usr/share/xsessions/dwm.desktop"
+  install -Dm644 "$startdir/system/dwm.desktop" "$pkgdir/usr/share/xsessions/dwm.desktop"
 }
