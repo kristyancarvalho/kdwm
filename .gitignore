@@ -3,10 +3,10 @@
 /src/
 /*.pkg.tar.*
 /*.tar.zst
+/*.tar.gz
 /*.log
 
 # Local/runtime data only
 /.cache/
 /.wal/
 *.qmlc
-
