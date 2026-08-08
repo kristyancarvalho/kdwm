@@ -35,10 +35,10 @@ static const Layout layouts[] = { { "[T]", tile }, { "[F]", NULL }, { "[M]", mon
 	{ MODKEY|ShiftMask, KEY, tag, {.ui = 1 << TAG} }, { MODKEY|ControlMask|ShiftMask, KEY, toggletag, {.ui = 1 << TAG} },
 #define SHCMD(cmd) { .v = (const char*[]){ "/bin/sh", "-c", cmd, NULL } }
 static char dmenumon[2] = "0";
-static const char *dmenucmd[] = { "rofi", "-show", "drun", "-theme", "/home/kristyan/.config/rofi/kdwm.rasi", NULL };
+static const char *dmenucmd[] = { "/usr/local/bin/kdwm-launcher", NULL };
 static const char *termcmd[] = { "kitty", NULL };
-static const char *wallpapercmd[] = { "/home/kristyan/src/dwm/scripts/wallpaper", "select", NULL };
-static const char *restartcmd[] = { "/home/kristyan/src/dwm/scripts/restart-dwm", NULL };
+static const char *wallpapercmd[] = { "/usr/local/bin/kdwm-wallpaper", "select", NULL };
+static const char *restartcmd[] = { "/usr/local/bin/kdwm-restart", NULL };
 static const Key keys[] = {
 	{ MODKEY, XK_p, spawn, {.v = dmenucmd} }, { MODKEY|ShiftMask, XK_Return, spawn, {.v = termcmd} },
 	{ MODKEY, XK_w, spawn, {.v = wallpapercmd} }, { MODKEY, XK_b, togglebar, {0} },

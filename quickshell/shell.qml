@@ -18,6 +18,8 @@ ShellRoot {
     property date now: new Date()
     property var ptBr: Qt.locale("pt_BR")
     property int historyLimit: 60
+    property string cacheDir: Quickshell.env("KDWM_CACHE_DIR") || Quickshell.env("HOME") + "/.cache/kdwm"
+    property string repoDir: Quickshell.env("KDWM_REPO_DIR") || Quickshell.env("HOME") + "/.local/share/kdwm"
 
     function append(history, value) {
         var next = history.slice(Math.max(0, history.length - historyLimit + 1))
@@ -48,7 +50,7 @@ ShellRoot {
 
     FileView {
         id: themeFile
-        path: "/home/kristyan/.cache/kdwm/theme/theme.json"
+        path: root.cacheDir + "/theme/theme.json"
         blockLoading: true; preload: true; watchChanges: true; printErrors: false
         onLoaded: { try { root.palette = JSON.parse(text()) } catch(error) {} }
         onFileChanged: reload()
@@ -56,7 +58,7 @@ ShellRoot {
     }
     Process {
         id: metrics
-        command: ["/home/kristyan/src/dwm/scripts/system-stats-daemon"]
+        command: [root.repoDir + "/scripts/system-stats-daemon"]
         running: true
         stdout: SplitParser {
             splitMarker: "\n"

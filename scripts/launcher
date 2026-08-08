@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+exec rofi -show drun -theme "$HOME/.config/rofi/kdwm.rasi"

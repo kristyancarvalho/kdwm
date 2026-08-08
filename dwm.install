@@ -1,4 +1,4 @@
 post_install() {
-  echo "-- kdwm configuration lives in /home/kristyan/src/dwm."
+  echo "-- kdwm uses the checkout selected by install.sh."
   echo "-- kdwm wallpaper colours reload with SIGUSR1; no rebuild is required."
 }

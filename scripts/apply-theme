@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-repo_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+script_path=$(readlink -f "${BASH_SOURCE[0]}")
+repo_dir="$(cd -- "$(dirname -- "$script_path")/.." && pwd)"
 cache_dir="${KDWM_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/kdwm}"
 image=${1:?usage: apply-theme IMAGE}
 

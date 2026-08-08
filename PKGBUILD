@@ -6,7 +6,7 @@
 
 pkgname=dwm
 pkgver=6.8
-pkgrel=9
+pkgrel=10
 pkgdesc="A dynamic window manager for X"
 url="https://dwm.suckless.org"
 arch=('i686' 'x86_64' 'arm' 'armv7h' 'armv6h' 'aarch64')
@@ -36,5 +36,5 @@ package() {
   make PREFIX=/usr DESTDIR="$pkgdir" install
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
   install -Dm644 README "$pkgdir/usr/share/doc/$pkgname/README"
-  install -Dm644 "$startdir/system/dwm.desktop" "$pkgdir/usr/share/xsessions/dwm.desktop"
+  install -Dm644 "$startdir/system/dwm.desktop" "$pkgdir/usr/share/xsessions/kdwm.desktop"
 }
