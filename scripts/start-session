@@ -6,6 +6,6 @@ mkdir -p "$cache"
 [[ -f "$cache/current-wallpaper" ]] && feh --no-fehbg --bg-fill "$(cat "$cache/current-wallpaper")" || true
 [[ -f "$cache/current-wallpaper" && -f "$cache/theme.json" ]] && "$repo/scripts/apply-theme" "$(cat "$cache/current-wallpaper")" || true
 pgrep -x picom >/dev/null || picom --config "$repo/picom/picom.conf" --daemon
-pgrep -f "$repo/scripts/system-stats-daemon" >/dev/null || "$repo/scripts/system-stats-daemon" >/dev/null 2>&1 &
+pgrep -f '[s]ystem-stats-daemon' >/dev/null || "$repo/scripts/system-stats-daemon" >/dev/null 2>&1 &
 quickshell -p "$repo/quickshell" --no-duplicate --daemonize || true
 exec /usr/bin/dwm
