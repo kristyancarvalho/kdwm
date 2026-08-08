@@ -17,7 +17,8 @@ static const char *colors[][3] = {
 
 static int gappih = 10, gappiv = 10, gappoh = 10, gappov = 10;
 static const int smartgaps = 0;
-static const char *tags[] = { "01", "02", "03", "04", "05", "06", "07", "08", "09" };
+static const unsigned int tagwidth = 52;
+static const char *tags[] = { "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX" };
 static const Rule rules[] = {
 	{ "Gimp", NULL, NULL, 0, 1, -1 },
 	{ "Firefox", NULL, NULL, 1 << 8, 0, -1 },

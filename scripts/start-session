@@ -28,13 +28,7 @@ ensure_runtime() {
 restore_theme() {
   local wallpaper=
   [[ -s "$runtime_dir/state/current-wallpaper" ]] && wallpaper=$(<"$runtime_dir/state/current-wallpaper")
-  if [[ -n "$wallpaper" && -r "$wallpaper" ]]; then
-    feh --no-fehbg --bg-fill "$wallpaper"
-    "$repo_dir/scripts/apply-theme" "$wallpaper" || true
-  else
-    "$repo_dir/scripts/generate-theme"
-    xrdb -merge "$runtime_dir/theme/colors.Xresources"
-  fi
+  "$repo_dir/scripts/wallpaper" restore || { "$repo_dir/scripts/generate-theme"; xrdb -merge "$runtime_dir/theme/colors.Xresources"; }
 }
 
 start_picom() {
