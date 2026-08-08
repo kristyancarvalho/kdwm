@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=kdwm
+Comment=Kristyan's DWM session
+Exec=/usr/local/bin/kdwm-session
+Icon=dwm
+Type=XSession

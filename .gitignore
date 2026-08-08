@@ -1,0 +1,11 @@
+/pkg/
+/src/
+/*.pkg.tar.*
+/*.tar.zst
+/*.tar.gz
+/*.log
+
+/.cache/
+/.wal/
+*.qmlc
+__pycache__/

@@ -1,0 +1,171 @@
+#!/usr/bin/env python3
+import json
+import os
+import pathlib
+import subprocess
+import sys
+import tempfile
+
+
+HOME = pathlib.Path.home()
+OUT_DIR = pathlib.Path(os.environ.get("KDWM_CACHE_DIR", HOME / ".cache/kdwm")) / "theme"
+MATUGEN_FILE = OUT_DIR / "matugen.json"
+
+
+def rgb(value):
+    value = value.lstrip("#")
+    return tuple(int(value[index:index + 2], 16) for index in (0, 2, 4))
+
+
+def hexc(color):
+    return "#" + "".join(f"{max(0, min(255, round(part))):02x}" for part in color)
+
+
+def mix(first, second, amount):
+    return tuple(a * (1 - amount) + b * amount for a, b in zip(rgb(first), rgb(second)))
+
+
+def luminance(value):
+    channels = []
+    for part in rgb(value):
+        part /= 255
+        channels.append(part / 12.92 if part <= 0.04045 else ((part + 0.055) / 1.055) ** 2.4)
+    return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
+
+
+def contrast(first, second):
+    bright, dark = sorted((luminance(first), luminance(second)), reverse=True)
+    return (bright + 0.05) / (dark + 0.05)
+
+
+def atomic_write(path, content):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            handle.write(content)
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+
+
+def generated_palette(image):
+    command = ["matugen", "image", str(image), "--source-color-index", "0", "-t",
+               "scheme-neutral", "--dry-run", "--json", "hex"]
+    output = subprocess.run(command, check=True, capture_output=True, text=True).stdout
+    data = json.loads(output)
+    atomic_write(MATUGEN_FILE, json.dumps(data, indent=2) + "\n")
+    return data
+
+
+def saved_palette():
+    if MATUGEN_FILE.exists():
+        with MATUGEN_FILE.open(encoding="utf-8") as handle:
+            return json.load(handle)
+    return None
+
+
+image = pathlib.Path(sys.argv[1]).expanduser().resolve() if len(sys.argv) > 1 else None
+matugen = generated_palette(image) if image else saved_palette()
+if matugen:
+    colors = matugen["colors"]
+    raw_background = colors["background"]["dark"]["color"]
+    raw_foreground = colors["on_surface"]["dark"]["color"]
+    raw_accent = colors["source_color"]["dark"]["color"]
+else:
+    raw_background = "#07110f"
+    raw_foreground = "#d7e5df"
+    raw_accent = "#4d9b82"
+
+background = hexc(mix(raw_background, "#000000", 0.68))
+foreground = raw_foreground
+if contrast(foreground, background) < 7:
+    foreground = hexc(mix(foreground, "#ffffff", 0.45))
+surface = hexc(mix(background, foreground, 0.07))
+surface_alt = hexc(mix(background, foreground, 0.13))
+muted = hexc(mix(background, foreground, 0.52))
+accent = hexc(mix(raw_accent, foreground, 0.16))
+if contrast(accent, background) < 3:
+    accent = hexc(mix(accent, foreground, 0.38))
+accent_dim = hexc(mix(accent, background, 0.58))
+border = hexc(mix(background, accent, 0.28))
+occupied = hexc(mix(muted, accent, 0.20))
+critical = hexc(mix("#c95c65", background, 0.20))
+warning = hexc(mix("#c3a46b", background, 0.25))
+
+theme = {
+    "background": background,
+    "surface": surface,
+    "surfaceAlt": surface_alt,
+    "surfaceElevated": surface_alt,
+    "foreground": foreground,
+    "mutedForeground": muted,
+    "accent": accent,
+    "accentDim": accent_dim,
+    "selectedBackground": surface_alt,
+    "selectedForeground": accent,
+    "border": border,
+    "occupied": occupied,
+    "urgent": critical,
+    "critical": critical,
+    "warning": warning,
+    "success": accent,
+}
+
+atomic_write(OUT_DIR / "theme.json", json.dumps(theme, indent=2) + "\n")
+
+xresources = f"""*background: {background}
+*foreground: {foreground}
+dwm.normfg: {foreground}
+dwm.normbg: {background}
+dwm.normborder: {border}
+dwm.selfg: {background}
+dwm.selbg: {accent}
+dwm.selborder: {accent}
+dwm.occfg: {occupied}
+dwm.occbg: {background}
+dwm.urgentfg: {background}
+dwm.urgentbg: {critical}
+"""
+atomic_write(OUT_DIR / "colors.Xresources", xresources)
+
+kitty = [
+    f"foreground {foreground}",
+    f"background {background}",
+    f"cursor {accent}",
+    f"cursor_text_color {background}",
+    f"selection_foreground {foreground}",
+    f"selection_background {surface_alt}",
+    f"url_color {accent}",
+    f"active_border_color {accent}",
+    f"inactive_border_color {border}",
+]
+kitty_palette = [background, critical, accent, warning, accent, accent_dim, accent, foreground,
+                 muted, critical, accent, warning, accent, accent_dim, accent, foreground]
+kitty.extend(f"color{index} {color}" for index, color in enumerate(kitty_palette))
+atomic_write(OUT_DIR / "kitty-colors.conf", "\n".join(kitty) + "\n")
+
+rofi = f"""* {{
+    kdwm-background: {background}ec;
+    kdwm-surface: {surface}e6;
+    kdwm-surface-alt: {surface_alt}f2;
+    kdwm-foreground: {foreground};
+    kdwm-muted: {muted};
+    kdwm-border: {border}d8;
+    kdwm-accent: {accent};
+    kdwm-selected-background: {surface_alt};
+    kdwm-selected-foreground: {accent};
+}}
+"""
+atomic_write(OUT_DIR / "rofi-colors.rasi", rofi)
+
+wal = {
+    "wallpaper": str(image) if image else matugen.get("image", "") if matugen else "",
+    "special": {"background": background, "foreground": foreground, "cursor": accent},
+    "colors": {f"color{index}": color for index, color in enumerate(kitty_palette)},
+}
+wal_dir = HOME / ".cache/wal"
+atomic_write(wal_dir / "colors.json", json.dumps(wal, indent=2) + "\n")
+if image:
+    atomic_write(wal_dir / "wal", str(image) + "\n")

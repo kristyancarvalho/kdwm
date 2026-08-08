@@ -1,4 +1,4 @@
 post_install() {
-  echo "-- Edit config.h in dwm's PKGBUILD directory (generally /var/abs/community/dwm/)"
-  echo "-- and rebuild package if you want to change settings."
+  echo "-- kdwm uses the checkout selected by install.sh."
+  echo "-- kdwm wallpaper colours reload with SIGUSR1; no rebuild is required."
 }

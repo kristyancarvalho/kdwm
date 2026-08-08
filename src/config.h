@@ -1,1 +1,0 @@
-/home/kristyan/src/dwm/config.h

@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+script_path=$(readlink -f "${BASH_SOURCE[0]}")
+repo_dir="$(cd -- "$(dirname -- "$script_path")/.." && pwd)"
+cache_dir="${KDWM_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/kdwm}"
+image=${1:?usage: apply-theme IMAGE}
+
+[[ -r "$image" ]] || { printf 'Wallpaper is not readable: %s\n' "$image" >&2; exit 1; }
+command -v matugen >/dev/null || { printf 'matugen is required to generate the kdwm palette\n' >&2; exit 1; }
+mkdir -p "$cache_dir/theme" "$cache_dir/state" "$cache_dir/wallpapers" "$cache_dir/logs"
+KDWM_CACHE_DIR="$cache_dir" "$repo_dir/scripts/generate-theme" "$image"
+xrdb -merge "$cache_dir/theme/colors.Xresources"
+[[ ${KDWM_SKIP_DWM_RELOAD:-0} == 1 ]] || pkill -USR1 -x dwm 2>/dev/null || true
+pkill -USR1 -x kitty 2>/dev/null || true
+touch "$cache_dir/state/theme.changed"

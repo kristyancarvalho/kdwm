@@ -1,0 +1,1 @@
+{"providers":[{"name":"wallhaven","enabled":true,"endpoint":"https://wallhaven.cc/api/v1/search","query":"dark minimal abstract geometry","categories":"100","purity":"100","sorting":"toplist","topRange":"1M","atleast":"1920x1080","ratios":"16x9,16x10","results":24}]}
