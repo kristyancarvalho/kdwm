@@ -1,0 +1,33 @@
+--- a/dwm.c
++++ b/dwm.c
+@@ -1055,6 +1055,7 @@
+ {
+ 	XrmDatabase db;
+ 	XrmValue value;
++	Display *resource_display;
+ 	char *resource_string, *type;
+ 	struct { const char *name; char *value; } resources[] = {
+ 		{ "dwm.normfg", normfg }, { "dwm.normbg", normbg },
+@@ -1066,14 +1067,19 @@
+ 	size_t i;
+ 
+ 	XrmInitialize();
+-	if (!(resource_string = XResourceManagerString(dpy))
+-		|| !(db = XrmGetStringDatabase(resource_string)))
++	if (!(resource_display = XOpenDisplay(NULL)))
+ 		return;
++	if (!(resource_string = XResourceManagerString(resource_display))
++		|| !(db = XrmGetStringDatabase(resource_string))) {
++		XCloseDisplay(resource_display);
++		return;
++	}
+ 	for (i = 0; i < LENGTH(resources); i++)
+ 		if (XrmGetResource(db, resources[i].name, "Dwm.Color", &type, &value)
+-			&& value.addr && value.size < 8)
++			&& value.addr && value.size <= 8)
+ 			snprintf(resources[i].value, 8, "%s", value.addr);
+ 	XrmDestroyDatabase(db);
++	XCloseDisplay(resource_display);
+ }
+ 
+ static void
