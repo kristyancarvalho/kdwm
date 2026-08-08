@@ -129,6 +129,20 @@ install_dependencies() {
 }
 
 build_dwm() {
+  local desired_version installed_version
+  desired_version=$(awk '/^[[:space:]]*pkgver =/ {version=$3} /^[[:space:]]*pkgrel =/ {release=$3} END {print version "-" release}' "$repo_dir/.SRCINFO")
+  installed_version=$(pacman -Q dwm 2>/dev/null | awk '{print $2}' || true)
+  if [[ -n "$desired_version" && $installed_version == "$desired_version" ]] && cmp -s "$repo_dir/system/dwm.desktop" /usr/share/xsessions/kdwm.desktop; then
+    printf 'DWM %s is already installed.\n' "$installed_version"
+    return 0
+  fi
+  protect_system_file "$repo_dir/system/dwm.desktop" /usr/share/xsessions/kdwm.desktop
+  if [[ -e /usr/share/xsessions/dwm.desktop ]] && pacman -Qo /usr/share/xsessions/dwm.desktop 2>/dev/null | grep -q ' is owned by dwm '; then
+    local legacy_backup="$system_backup_dir/usr/share/xsessions/dwm.desktop"
+    run install -d "$(dirname "$legacy_backup")"
+    run mv /usr/share/xsessions/dwm.desktop "$legacy_backup"
+    printf 'Backed up %s to %s\n' /usr/share/xsessions/dwm.desktop "$legacy_backup"
+  fi
   if ((!dry_run)) && ! runuser -u "$target_user" -- test -w "$repo_dir"; then
     printf '%s must be writable by %s for makepkg.\n' "$repo_dir" "$target_user" >&2
     exit 1
@@ -179,7 +193,6 @@ if [[ $(id -u) -eq 0 ]]; then
 fi
 
 if ((install_packages)); then
-  protect_system_file "$repo_dir/system/dwm.desktop" /usr/share/xsessions/kdwm.desktop
   build_dwm
 fi
 
