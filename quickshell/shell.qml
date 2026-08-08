@@ -9,6 +9,7 @@ ShellRoot {
     id: root
     property var fallback: ({background:"#050807",surface:"#111816",surfaceElevated:"#1b2521",foreground:"#d7e5df",mutedForeground:"#77817d",accent:"#6da88e",accentDim:"#315447",border:"#294238",critical:"#ad5860",warning:"#9d875d",success:"#6da88e"})
     property var palette: fallback
+    property var weather: ({city:"São Paulo",bar:"--°C",temperature:null,apparentTemperature:null,humidity:null,weatherCode:-1,maximum:null,minimum:null,updatedAt:0})
     property var stats: ({cpu:{usage:0,cores:[],frequency:0,load:[0,0,0]},memory:{percent:0,used:0,total:0,cached:0},network:{interface:"",ip:"",download:0,upload:0},storage:[],temperatures:[],processes:[],gpu:{available:false},battery:{available:false},audio:{available:false},bluetooth:{available:false},hostname:"Carregando",kernel:"",os:"Arch Linux",wm:"DWM",packages:0,uptime:0})
     property var cpuHistory: []
     property var memoryHistory: []
@@ -39,6 +40,10 @@ ShellRoot {
         var labels = {"Charging":"Carregando","Discharging":"Em uso","Full":"Completa","Not charging":"Sem carregar","Unknown":"Indisponível"}
         return labels[status] || status
     }
+    function weatherCondition(code) {
+        var labels = {0:"Céu limpo",1:"Predominantemente limpo",2:"Parcialmente nublado",3:"Nublado",45:"Neblina",48:"Neblina com geada",51:"Garoa fraca",53:"Garoa",55:"Garoa intensa",61:"Chuva fraca",63:"Chuva",65:"Chuva intensa",71:"Neve fraca",73:"Neve",75:"Neve intensa",80:"Pancadas fracas",81:"Pancadas",82:"Pancadas intensas",95:"Trovoadas",96:"Trovoadas com granizo",99:"Trovoadas intensas"}
+        return labels[code] || "Dados meteorológicos indisponíveis"
+    }
     function ingest(data) {
         stats = data
         cpuHistory = append(cpuHistory, data.cpu.usage)
@@ -55,6 +60,14 @@ ShellRoot {
         onLoaded: { try { root.palette = JSON.parse(text()) } catch(error) {} }
         onFileChanged: reload()
         onTextChanged: { try { root.palette = JSON.parse(text()) } catch(error) {} }
+    }
+    FileView {
+        id: weatherFile
+        path: root.cacheDir + "/state/weather.json"
+        blockLoading: true; preload: true; watchChanges: true; printErrors: false
+        onLoaded: { try { root.weather = JSON.parse(text()) } catch(error) {} }
+        onFileChanged: reload()
+        onTextChanged: { try { root.weather = JSON.parse(text()) } catch(error) {} }
     }
     Process {
         id: metrics
@@ -79,9 +92,9 @@ ShellRoot {
             anchors { top: parent.top; horizontalCenter: parent.horizontalCenter; topMargin: 8 }
             width: Math.min(parent.width - 48, 1220)
             height: Math.min(parent.height - 16, 730)
-            columns: 3; rows: 3; columnSpacing: 8; rowSpacing: 8
+            columns: 3; rows: 4; columnSpacing: 8; rowSpacing: 8
             property real unitWidth: (width - columnSpacing * 2) / 3
-            property real unitHeight: (height - rowSpacing * 2) / 3
+            property real unitHeight: (height - rowSpacing * 3) / 4
 
             Card {
                 theme: root.palette; title: "Uso da CPU // tempo real"; accentColor: root.palette.accent
@@ -206,6 +219,18 @@ ShellRoot {
                         Text { text: (root.stats.gpu.name || "GPU") + "  " + Number(root.stats.gpu.usage || 0).toFixed(0) + "%  ·  " + Number(root.stats.gpu.temperature || 0).toFixed(0) + "°C"; color: root.palette.accent; font.pixelSize: 10 }
                         Sparkline { width: parent.width; height: 35; values: root.gpuHistory; lineColor: root.palette.accent; maximum: 100 }
                     }
+                }
+            }
+
+            Card {
+                theme: root.palette; title: "Clima // São Paulo"; accentColor: root.palette.accent
+                Layout.fillWidth: true; Layout.fillHeight: true; Layout.preferredWidth: parent.unitWidth; Layout.preferredHeight: parent.unitHeight
+                Column { anchors.fill: parent; spacing: 7
+                    Text { text: root.weather.temperature === null ? "--°C" : Math.round(root.weather.temperature) + "°C"; color: root.palette.foreground; font { pixelSize: 34; bold: true } }
+                    Text { text: root.weatherCondition(root.weather.weatherCode); color: root.palette.accent; font.pixelSize: 12 }
+                    Text { text: root.weather.apparentTemperature === null ? "Dados meteorológicos indisponíveis" : "Sensação: " + Math.round(root.weather.apparentTemperature) + "°C"; color: root.palette.mutedForeground; font.pixelSize: 10 }
+                    Text { visible: root.weather.humidity !== null; text: "Umidade: " + Math.round(root.weather.humidity) + "%"; color: root.palette.mutedForeground; font.pixelSize: 10 }
+                    Text { visible: root.weather.maximum !== null && root.weather.minimum !== null; text: "Máxima: " + Math.round(root.weather.maximum) + "°C  ·  Mínima: " + Math.round(root.weather.minimum) + "°C"; color: root.palette.mutedForeground; font.pixelSize: 10 }
                 }
             }
         }
