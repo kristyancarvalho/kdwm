@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+while :; do /home/kristyan/src/dwm/scripts/system-stats || true; sleep 1; done
