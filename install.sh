@@ -190,6 +190,7 @@ if [[ $(id -u) -eq 0 ]]; then
   link_system_path "$repo_dir/scripts/wallpaper" /usr/local/bin/kdwm-wallpaper
   link_system_path "$repo_dir/scripts/restart-dwm" /usr/local/bin/kdwm-restart
   link_system_path "$repo_dir/scripts/launcher" /usr/local/bin/kdwm-launcher
+  link_system_path "$repo_dir/scripts/weather-status" /usr/local/bin/kdwm-weather
 fi
 
 if ((install_packages)); then
@@ -197,7 +198,7 @@ if ((install_packages)); then
 fi
 
 if ((install_wallpaper && !dry_run)); then
-  runuser -u "$target_user" -- env HOME="$target_home" "$repo_dir/scripts/wallpaper" refresh || printf 'Wallpaper catalog refresh failed; run kdwm-wallpaper refresh later.\n' >&2
+  runuser -u "$target_user" -- env HOME="$target_home" "$repo_dir/scripts/wallpaper" default || printf 'Lain wallpaper setup failed; run kdwm-wallpaper default later.\n' >&2
 fi
 
 printf 'kdwm deployment is ready for %s from %s.\n' "$target_user" "$repo_dir"
