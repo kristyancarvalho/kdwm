@@ -28,7 +28,12 @@ backup_link "$repo_dir/picom/picom.conf" "$target_home/.config/picom/picom.conf"
 backup_link "$repo_dir/config/gtk-3.0/settings.ini" "$target_home/.config/gtk-3.0/settings.ini"
 backup_link "$repo_dir/config/gtk-4.0/settings.ini" "$target_home/.config/gtk-4.0/settings.ini"
 backup_link "$repo_dir/config/environment.d/90-dwm-rice.conf" "$target_home/.config/environment.d/90-dwm-rice.conf"
-chown -h "$target_user:$target_user" "$target_home/.config/quickshell/dwm-rice" "$target_home/.config/picom/picom.conf" "$target_home/.config/gtk-3.0/settings.ini" "$target_home/.config/gtk-4.0/settings.ini" "$target_home/.config/environment.d/90-dwm-rice.conf"
+backup_link "$repo_dir/rofi/dwm-rice.rasi" "$target_home/.config/rofi/dwm-rice.rasi"
+chown -h "$target_user:$target_user" "$target_home/.config/quickshell/dwm-rice" "$target_home/.config/picom/picom.conf" "$target_home/.config/gtk-3.0/settings.ini" "$target_home/.config/gtk-4.0/settings.ini" "$target_home/.config/environment.d/90-dwm-rice.conf" "$target_home/.config/rofi/dwm-rice.rasi"
 
-printf 'Deployment links are ready for %s. Run scripts/build-package as %s, then install the package as root.\n' "$target_user" "$target_user"
-
+if [[ $(id -u) -eq 0 ]]; then
+  runuser -u "$target_user" -- "$repo_dir/scripts/build-package"
+  package=$(find "$repo_dir" -maxdepth 1 -type f -name 'dwm-[0-9]*-x86_64.pkg.tar.zst' -printf '%T@ %p\n' | sort -nr | head -n1 | cut -d' ' -f2-)
+  pacman -U --noconfirm "$package"
+fi
+printf 'Deployment links are ready for %s.\n' "$target_user"
