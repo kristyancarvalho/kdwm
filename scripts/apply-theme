@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+home_dir=/home/kristyan; cache_dir="$home_dir/.cache/dwm-rice"; wal_dir="$home_dir/.cache/wal"
+mkdir -p "$cache_dir"; image=${1:?usage: apply-theme IMAGE}
+wal -n -q -i "$image"
+[[ -s "$wal_dir/colors.json" ]] || { echo 'Pywal did not produce colors.json' >&2; exit 1; }
+jq -n --slurpfile wal "$wal_dir/colors.json" '{background:$wal[0].special.background,surface:$wal[0].colors.color0,surfaceVariant:$wal[0].colors.color8,foreground:$wal[0].special.foreground,mutedForeground:$wal[0].colors.color7,accent:$wal[0].colors.color4,accentSecondary:$wal[0].colors.color6,border:$wal[0].colors.color8,critical:$wal[0].colors.color1,warning:$wal[0].colors.color3,success:$wal[0].colors.color2}' >"$cache_dir/theme.json.tmp"
+mv "$cache_dir/theme.json.tmp" "$cache_dir/theme.json"
+{ printf '*background: %s\n*foreground: %s\n' "$(jq -r .background "$cache_dir/theme.json")" "$(jq -r .foreground "$cache_dir/theme.json")"; printf 'dwm.normfg: %s\ndwm.normbg: %s\ndwm.normborder: %s\ndwm.selfg: %s\ndwm.selbg: %s\ndwm.selborder: %s\n' "$(jq -r .foreground "$cache_dir/theme.json")" "$(jq -r .background "$cache_dir/theme.json")" "$(jq -r .border "$cache_dir/theme.json")" "$(jq -r .background "$cache_dir/theme.json")" "$(jq -r .accent "$cache_dir/theme.json")" "$(jq -r .accent "$cache_dir/theme.json")"; } >"$cache_dir/colors.Xresources"
+xrdb -merge "$cache_dir/colors.Xresources"; pgrep -x dwm | xargs -r kill -USR1; touch "$cache_dir/theme.changed"
