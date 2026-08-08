@@ -22,6 +22,7 @@ prepare() {
   patch -Np1 -i "$startdir/dwm/patches/0001-gaps-and-xresources-reload.diff"
   patch -Np1 -i "$startdir/dwm/patches/0002-ignore-desktop-panel.diff"
   patch -Np1 -i "$startdir/dwm/patches/0003-clean-status-and-restart.diff"
+  patch -Np1 -i "$startdir/dwm/patches/0004-semantic-tag-colors.diff"
   cp -fv "$startdir/dwm/config.h" config.h
 }
 

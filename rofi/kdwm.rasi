@@ -1,10 +1,16 @@
-@import "/home/kristyan/.cache/kdwm/theme/rofi-colors.rasi"
-* { font: "JetBrains Mono 11"; }
+@import "~/.cache/kdwm/theme/rofi-colors.rasi"
+* { font: "JetBrains Mono 11"; background-color: transparent; text-color: @kdwm-foreground; }
 window { width: 42%; border: 1px; border-color: @kdwm-border; border-radius: 3px; background-color: @kdwm-background; }
 mainbox { padding: 10px; spacing: 8px; }
-inputbar { padding: 8px 10px; background-color: @kdwm-surface; border: 1px; border-color: @kdwm-border; }
-listview { lines: 8; spacing: 3px; }
-element { padding: 8px 10px; border-radius: 2px; }
+inputbar { padding: 8px 10px; spacing: 8px; background-color: @kdwm-surface; border: 1px; border-color: @kdwm-border; }
+prompt { text-color: @kdwm-accent; }
+entry { text-color: @kdwm-foreground; placeholder-color: @kdwm-muted; }
+listview { lines: 8; spacing: 3px; scrollbar: false; }
+element { padding: 8px 10px; border-radius: 2px; background-color: transparent; }
+element-icon { size: 20px; margin: 0 10px 0 0; }
 element-text { text-color: @kdwm-foreground; }
-element selected.normal { background-color: @kdwm-surface-elevated; }
-element-text selected.normal { text-color: @kdwm-accent; }
+element normal.urgent { background-color: @kdwm-surface; text-color: @kdwm-accent; }
+element selected.normal, element selected.active, element selected.urgent { background-color: @kdwm-selected-background; border: 1px; border-color: @kdwm-border; }
+element-text selected.normal, element-text selected.active, element-text selected.urgent { text-color: @kdwm-selected-foreground; }
+message { padding: 8px; background-color: @kdwm-surface; }
+textbox { text-color: @kdwm-muted; }

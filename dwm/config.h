@@ -6,9 +6,13 @@ static const char *fonts[] = { "JetBrains Mono:size=10" };
 static const char dmenufont[] = "JetBrains Mono:size=10";
 static char normfg[8] = "#cdd6f4", normbg[8] = "#1e1e2e", normborder[8] = "#45475a";
 static char selfg[8] = "#1e1e2e", selbg[8] = "#89b4fa", selborder[8] = "#89b4fa";
+static char occfg[8] = "#7f849c", occbg[8] = "#1e1e2e";
+static char urgentfg[8] = "#1e1e2e", urgentbg[8] = "#f38ba8";
 static const char *colors[][3] = {
 	[SchemeNorm] = { normfg, normbg, normborder },
 	[SchemeSel] = { selfg, selbg, selborder },
+	[SchemeOcc] = { occfg, occbg, normborder },
+	[SchemeUrg] = { urgentfg, urgentbg, urgentbg },
 };
 
 static int gappih = 10, gappiv = 10, gappoh = 10, gappov = 10;
