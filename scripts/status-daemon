@@ -20,6 +20,6 @@ while true; do
   volume=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk '{printf "%d%%", $2 * 100; if ($0 ~ /MUTED/) printf "M"}' || true)
   [[ -n "$volume" ]] || volume="--"
   weather=$("$script_dir/weather-status")
-  xsetroot -name " CPU ${cpu}%  |  RAM ${memory}%  |  VOL ${volume}  |  ${weather}  |  $(date '+%a %d %b  %H:%M') "
+  xsetroot -name "CPU $(printf '%02d' "$cpu")%  RAM $(printf '%02d' "$memory")%  VOL ${volume}  ${weather}  $(date '+%H:%M')"
   sleep 2
 done
