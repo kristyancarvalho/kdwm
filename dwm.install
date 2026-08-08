@@ -1,4 +1,4 @@
 post_install() {
-  echo "-- Edit config.h in dwm's PKGBUILD directory (generally /var/abs/community/dwm/)"
-  echo "-- and rebuild package if you want to change settings."
+  echo "-- Repository configuration lives in /home/kristyan/src/dwm."
+  echo "-- Runtime wallpaper colours reload with SIGUSR1; no rebuild is required."
 }
