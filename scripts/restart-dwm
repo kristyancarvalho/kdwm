@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+pid=$(pgrep -n -x dwm)
+[[ -n "$pid" ]] || { printf 'kdwm is not running\n' >&2; exit 1; }
+kill -USR2 "$pid"

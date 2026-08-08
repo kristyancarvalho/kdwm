@@ -1,4 +1,4 @@
 post_install() {
-  echo "-- Repository configuration lives in /home/kristyan/src/dwm."
-  echo "-- Runtime wallpaper colours reload with SIGUSR1; no rebuild is required."
+  echo "-- kdwm configuration lives in /home/kristyan/src/dwm."
+  echo "-- kdwm wallpaper colours reload with SIGUSR1; no rebuild is required."
 }

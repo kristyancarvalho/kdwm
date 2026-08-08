@@ -8,11 +8,6 @@
  static volatile sig_atomic_t reloadthemeflag = 0;
 +static volatile sig_atomic_t restartwm = 0;
  static Cur *cursor[CurLast];
-@@ -1447,2 +1449,4 @@
- 		event = XNextEvent(dpy, &ev);
-+		if (!running)
-+			break;
- 		if (!event && handler[ev.type])
 @@ -1608,2 +1612,6 @@
  	sigaction(SIGUSR1, &sa, NULL);
 +	sa.sa_handler = sigrestart;
@@ -31,7 +26,7 @@
 +
 +static void
  sigreload(int unused)
-@@ -2112,4 +2128,4 @@
+@@ -2112,5 +2128,5 @@
  updatestatus(void)
  {
 -	if (!gettextprop(root, XA_WM_NAME, stext, sizeof(stext)))
@@ -42,5 +37,5 @@
 @@ -2264,2 +2280,4 @@
  	XCloseDisplay(dpy);
 +	if (restartwm)
-+		execvp(argv[0], argv);
++		return 42;
  	return EXIT_SUCCESS;

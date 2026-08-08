@@ -1,8 +1,62 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-repo_dir=/home/kristyan/src/dwm; cache_dir=/home/kristyan/.cache/dwm-rice/wallpapers; index="$cache_dir/index.json"; state=/home/kristyan/.cache/dwm-rice/current-wallpaper; mkdir -p "$cache_dir"
-refresh() { local s endpoint query categories purity sorting top_range atleast ratios; s=$(jq -c '.providers[]|select(.enabled and .name=="wallhaven")' "$repo_dir/wallpaper/sources.json"|head -1); endpoint=$(jq -r .endpoint <<<"$s"); query=$(jq -r .query <<<"$s"); categories=$(jq -r .categories <<<"$s"); purity=$(jq -r .purity <<<"$s"); sorting=$(jq -r .sorting <<<"$s"); top_range=$(jq -r .topRange <<<"$s"); atleast=$(jq -r .atleast <<<"$s"); ratios=$(jq -r .ratios <<<"$s"); curl --fail --silent --show-error --get "$endpoint" --data-urlencode "q=$query" --data "categories=$categories" --data "purity=$purity" --data "sorting=$sorting" --data "topRange=$top_range" --data "atleast=$atleast" --data "ratios=$ratios" | jq '{items:[.data[]|{id,path,short_url,resolution,category,uploader:.uploader.username}]}' >"$index.tmp"; [[ $(jq '.items|length' "$index.tmp") -gt 0 ]] || { rm -f "$index.tmp"; printf 'Wallpaper provider returned no results\n' >&2; exit 1; }; mv "$index.tmp" "$index"; }
-download() { local id=$1 path file; path=$(jq -r --arg id "$id" '.items[]|select(.id==$id)|.path' "$index"); file="$cache_dir/$id.${path##*.}"; [[ -f "$file" ]] || curl --fail --location --progress-bar "$path" -o "$file"; printf '%s\n' "$file"; }
-set_wallpaper() { local file=$1; file=$(realpath "$file"); [[ -f "$file" ]] || return 1; feh --no-fehbg --bg-fill "$file"; "$repo_dir/scripts/apply-theme" "$file"; printf '%s\n' "$file" >"$state.tmp"; mv "$state.tmp" "$state"; }
-select_wallpaper() { [[ -s "$index" ]] || refresh; local choice id; choice=$(jq -r '.items[]|"\(.id)  \(.resolution)  \(.category)  \(.uploader)"' "$index"|rofi -dmenu -i -p Wallpaper -theme "$repo_dir/rofi/dwm-rice.rasi") || return 0; id=${choice%% *}; set_wallpaper "$(download "$id")"; }
-case "${1:-select}" in refresh) refresh;; list) [[ -s "$index" ]] || refresh; jq -r '.items[]|"\(.id)\t\(.resolution)\t\(.short_url)"' "$index";; set) set_wallpaper "${2:?path required}";; random) [[ -s "$index" ]]||refresh; set_wallpaper "$(download "$(jq -r '.items|map(.id)|.[now|floor % length]' "$index")")";; current) cat "$state" 2>/dev/null||true;; select) select_wallpaper;; *) exit 2;; esac
+
+repo_dir=/home/kristyan/src/dwm
+runtime_dir=/home/kristyan/.cache/kdwm
+wallpaper_dir="$runtime_dir/wallpapers"
+index="$wallpaper_dir/index.json"
+state="$runtime_dir/state/current-wallpaper"
+
+mkdir -p "$wallpaper_dir" "$(dirname "$state")"
+
+refresh() {
+  local source endpoint query categories purity sorting top_range atleast ratios
+  source=$(jq -c '.providers[] | select(.enabled and .name == "wallhaven")' "$repo_dir/wallpaper/sources.json" | head -n1)
+  endpoint=$(jq -r .endpoint <<<"$source")
+  query=$(jq -r .query <<<"$source")
+  categories=$(jq -r .categories <<<"$source")
+  purity=$(jq -r .purity <<<"$source")
+  sorting=$(jq -r .sorting <<<"$source")
+  top_range=$(jq -r .topRange <<<"$source")
+  atleast=$(jq -r .atleast <<<"$source")
+  ratios=$(jq -r .ratios <<<"$source")
+  curl --fail --silent --show-error --get "$endpoint" --data-urlencode "q=$query" --data "categories=$categories" --data "purity=$purity" --data "sorting=$sorting" --data "topRange=$top_range" --data "atleast=$atleast" --data "ratios=$ratios" | jq '{items:[.data[] | {id,path,short_url,resolution,category,uploader:.uploader.username}]}' >"$index.tmp"
+  [[ $(jq '.items | length' "$index.tmp") -gt 0 ]] || { rm -f "$index.tmp"; return 1; }
+  mv "$index.tmp" "$index"
+}
+
+download() {
+  local id=$1 path file
+  path=$(jq -r --arg id "$id" '.items[] | select(.id == $id) | .path' "$index")
+  file="$wallpaper_dir/$id.${path##*.}"
+  [[ -f "$file" ]] || curl --fail --location --progress-bar "$path" -o "$file"
+  printf '%s\n' "$file"
+}
+
+set_wallpaper() {
+  local file=$1
+  file=$(realpath "$file")
+  [[ -f "$file" ]] || return 1
+  feh --no-fehbg --bg-fill "$file"
+  "$repo_dir/scripts/apply-theme" "$file"
+  printf '%s\n' "$file" >"$state.tmp"
+  mv "$state.tmp" "$state"
+}
+
+select_wallpaper() {
+  [[ -s "$index" ]] || refresh
+  local choice id
+  choice=$(jq -r '.items[] | "\(.id)  \(.resolution)  \(.category)  \(.uploader)"' "$index" | rofi -dmenu -i -p KDWM -theme "$repo_dir/rofi/kdwm.rasi") || return 0
+  id=${choice%% *}
+  set_wallpaper "$(download "$id")"
+}
+
+case "${1:-select}" in
+  refresh) refresh ;;
+  list) [[ -s "$index" ]] || refresh; jq -r '.items[] | "\(.id)\t\(.resolution)\t\(.short_url)"' "$index" ;;
+  set) set_wallpaper "${2:?path required}" ;;
+  random) [[ -s "$index" ]] || refresh; set_wallpaper "$(download "$(jq -r '.items | map(.id) | .[now | floor % length]' "$index")")" ;;
+  current) cat "$state" 2>/dev/null || true ;;
+  select) select_wallpaper ;;
+  *) exit 2 ;;
+esac

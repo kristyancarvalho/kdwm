@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-"""Turn Pywal's raw palette into one dark semantic desktop theme."""
-
 import json
 import os
 import pathlib
@@ -9,7 +7,7 @@ import tempfile
 
 HOME = pathlib.Path("/home/kristyan")
 WAL_FILE = HOME / ".cache/wal/colors.json"
-OUT_DIR = HOME / ".cache/dwm-rice"
+OUT_DIR = HOME / ".cache/kdwm/theme"
 
 
 def rgb(value):
@@ -50,21 +48,28 @@ def atomic_write(path, text):
             os.unlink(temporary)
 
 
-with WAL_FILE.open(encoding="utf-8") as handle:
-    wal = json.load(handle)
+if WAL_FILE.exists():
+    with WAL_FILE.open(encoding="utf-8") as handle:
+        wal = json.load(handle)
+else:
+    wal = {"special": {"background": "#07110f", "foreground": "#d7e5df"},
+           "colors": {f"color{index}": "#4d9b82" for index in range(16)}}
 
 raw_background = wal["special"]["background"]
-background = hexc(mix(raw_background, "#000000", 0.38))
-surface = hexc(mix(background, wal["colors"]["color8"], 0.18))
-surface_elevated = hexc(mix(background, wal["colors"]["color8"], 0.30))
+background = hexc(mix(raw_background, "#000000", 0.60))
 foreground = wal["special"]["foreground"]
 if contrast(foreground, background) < 7:
-    foreground = hexc(mix(foreground, "#ffffff", 0.38))
-muted = hexc(mix(background, foreground, 0.62))
-accent = wal["colors"]["color4"]
-accent_secondary = wal["colors"]["color6"]
-accent_tertiary = wal["colors"]["color5"]
-border = hexc(mix(background, accent, 0.34))
+    foreground = hexc(mix(foreground, "#ffffff", 0.45))
+surface = hexc(mix(background, foreground, 0.07))
+surface_elevated = hexc(mix(background, foreground, 0.13))
+muted = hexc(mix(background, foreground, 0.52))
+accent = hexc(mix(wal["colors"]["color4"], foreground, 0.18))
+if contrast(accent, background) < 3:
+    accent = hexc(mix(accent, foreground, 0.42))
+accent_dim = hexc(mix(accent, background, 0.58))
+border = hexc(mix(background, accent, 0.28))
+critical = hexc(mix("#c95c65", background, 0.20))
+warning = hexc(mix("#c3a46b", background, 0.25))
 
 theme = {
     "background": background,
@@ -74,11 +79,10 @@ theme = {
     "mutedForeground": muted,
     "border": border,
     "accent": accent,
-    "accentSecondary": accent_secondary,
-    "accentTertiary": accent_tertiary,
-    "critical": wal["colors"]["color1"],
-    "warning": wal["colors"]["color3"],
-    "success": wal["colors"]["color2"],
+    "accentDim": accent_dim,
+    "critical": critical,
+    "warning": warning,
+    "success": accent,
 }
 
 atomic_write(OUT_DIR / "theme.json", json.dumps(theme, indent=2) + "\n")
@@ -101,22 +105,23 @@ kitty = [
     f"cursor_text_color {background}",
     f"selection_foreground {foreground}",
     f"selection_background {surface_elevated}",
-    f"url_color {accent_secondary}",
+    f"url_color {accent}",
     f"active_border_color {accent}",
     f"inactive_border_color {border}",
 ]
-kitty.extend(f"color{index} {wal['colors'][f'color{index}']}" for index in range(16))
+kitty_palette = [background, critical, accent, warning, accent, accent_dim, accent, foreground,
+                 muted, critical, accent, warning, accent, accent_dim, accent, foreground]
+kitty.extend(f"color{index} {color}" for index, color in enumerate(kitty_palette))
 atomic_write(OUT_DIR / "kitty-colors.conf", "\n".join(kitty) + "\n")
 
 rofi = f"""* {{
-    wal-background: {background}e8;
-    wal-surface: {surface}e6;
-    wal-surface-elevated: {surface_elevated}f2;
-    wal-foreground: {foreground};
-    wal-muted: {muted};
-    wal-border: {border}99;
-    wal-accent: {accent};
-    wal-accent-secondary: {accent_secondary};
+    kdwm-background: {background}ec;
+    kdwm-surface: {surface}e6;
+    kdwm-surface-elevated: {surface_elevated}f2;
+    kdwm-foreground: {foreground};
+    kdwm-muted: {muted};
+    kdwm-border: {border}b8;
+    kdwm-accent: {accent};
 }}
 """
 atomic_write(OUT_DIR / "rofi-colors.rasi", rofi)

@@ -9,13 +9,13 @@ Rectangle {
     property color surfaceColor: theme.surface
     property color borderColor: theme.border
 
-    radius: 14
-    color: Qt.rgba(surfaceColor.r, surfaceColor.g, surfaceColor.b, 0.80)
+    radius: 3
+    color: Qt.rgba(surfaceColor.r, surfaceColor.g, surfaceColor.b, 0.74)
     border.width: 1
     border.color: Qt.rgba(borderColor.r, borderColor.g, borderColor.b, 0.46)
 
     Rectangle {
-        width: 3; height: 18; radius: 2
+        width: 2; height: 18; radius: 0
         color: card.accentColor
         anchors { left: parent.left; top: parent.top; leftMargin: 16; topMargin: 15 }
     }
