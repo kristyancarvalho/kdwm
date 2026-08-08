@@ -10,3 +10,4 @@
 /.cache/
 /.wal/
 *.qmlc
+__pycache__/
