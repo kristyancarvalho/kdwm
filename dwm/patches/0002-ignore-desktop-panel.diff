@@ -1,10 +1,12 @@
 --- a/dwm.c
 +++ b/dwm.c
-@@ -177,2 +177,3 @@
+@@ -177,4 +177,5 @@
  static void incnmaster(const Arg *arg);
 +static int isdock(Window w);
+ static void incgaps(const Arg *arg);
  static void keypress(XEvent *e);
-@@ -1029,6 +1030,32 @@
+ static void killclient(const Arg *arg);
+@@ -1088,5 +1089,27 @@
  }
  
 +int
@@ -32,8 +34,15 @@
  void
  manage(Window w, XWindowAttributes *wa)
  {
+@@ -1094,6 +1117,11 @@
+	Client *c, *t = NULL;
+	Window trans = None;
+ 	XWindowChanges wc;
+ 
 +	if (isdock(w)) {
++		XMapWindow(dpy, w);
 +		XLowerWindow(dpy, w);
 +		return;
 +	}
- 	Client *c, *t = NULL;
+ 	c = ecalloc(1, sizeof(Client));
+ 	c->win = w;
