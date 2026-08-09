@@ -191,6 +191,7 @@ if [[ $(id -u) -eq 0 ]]; then
   link_system_path "$repo_dir/scripts/restart-dwm" /usr/local/bin/kdwm-restart
   link_system_path "$repo_dir/scripts/launcher" /usr/local/bin/kdwm-launcher
   link_system_path "$repo_dir/scripts/weather-status" /usr/local/bin/kdwm-weather
+  link_system_path "$repo_dir/scripts/verify-install" /usr/local/bin/kdwm-verify
 fi
 
 if ((install_packages)); then
