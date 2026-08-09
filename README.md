@@ -161,7 +161,7 @@ kdwm-wallpaper current
 
 `Alt+w` opens the themed selector. The default provider/search is configured in `wallpaper/sources.json`. The release default is the dark, low-complexity Serial Experiments Lain preset [Wallhaven nrd3wq](https://whvn.cc/nrd3wq), downloaded into the per-user cache rather than redistributed.
 
-The native DWM bar keeps CPU, RAM, volume, cached `SP 23°C`-style temperature, and clock status. Temperature comes from Open-Meteo at most every 20 minutes; a failed refresh keeps the last value or shows `--°C`. Network details remain in the Quickshell dashboard. Tags render as `I` through `IX` in fixed 52 px cells while `Alt+1..9` remains numeric.
+The native DWM bar keeps CPU, RAM, volume, cached `SP 23°C`-style temperature, adaptive battery state, and a 24-hour clock in that exact order. A battery segment appears only when Linux exposes a `BAT*` power-supply device; `BAT+` and `BAT=` distinguish charging and full states. Temperature comes from Open-Meteo at most every 20 minutes; a failed refresh keeps the last value or shows `--°C`. Network details remain in the Quickshell dashboard. Tags render as `I` through `IX` in fixed 52 px cells while `Alt+1..9` remains numeric.
 
 ## Keybindings
 

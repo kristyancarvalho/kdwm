@@ -20,6 +20,20 @@ while true; do
   volume=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk '{printf "%d%%", $2 * 100; if ($0 ~ /MUTED/) printf "M"}' || true)
   [[ -n "$volume" ]] || volume="--"
   weather=$("$script_dir/weather-status")
-  xsetroot -name "CPU $(printf '%02d' "$cpu")%  RAM $(printf '%02d' "$memory")%  VOL ${volume}  ${weather}  $(date '+%H:%M')"
+  battery=""
+  for device in /sys/class/power_supply/BAT*; do
+    [[ -r "$device/capacity" ]] || continue
+    capacity=$(<"$device/capacity")
+    status=$(<"$device/status" 2>/dev/null || printf Unknown)
+    case "$status" in
+      Charging) battery="BAT+ ${capacity}%" ;;
+      Full) battery="BAT= ${capacity}%" ;;
+      *) battery="BAT ${capacity}%" ;;
+    esac
+    break
+  done
+  status="CPU $(printf '%02d' "$cpu")%  RAM $(printf '%02d' "$memory")%  VOL ${volume}  ${weather}"
+  [[ -n "$battery" ]] && status+="  ${battery}"
+  xsetroot -name "${status}  $(date '+%H:%M')"
   sleep 2
 done
