@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+repo_dir=$(cd -- "$(dirname -- "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)
+binary=/usr/bin/dwm
+pid=$(pgrep -n -x dwm || true)
+printf 'repository=%s\nhead=%s\npackage=%s\nbinary=%s\nbinary_sha256=%s\n' "$repo_dir" "$(git -C "$repo_dir" rev-parse --short HEAD)" "$(pacman -Qo "$binary" 2>&1)" "$binary" "$(sha256sum "$binary" | awk '{print $1}')"
+printf 'build_config=%s\npatches=%s\nsession=%s\n' "$repo_dir/dwm/config.h" "$(printf '%s ' "$repo_dir"/dwm/patches/*.diff)" "$(sed -n 's/^Exec=//p' /usr/share/xsessions/kdwm.desktop)"
+if [[ -n "$pid" ]]; then
+  printf 'running_pid=%s\nrunning_exe=%s\nquickshell=%s\n' "$pid" "$(readlink -f "/proc/$pid/exe")" "$(pgrep -a quickshell || true)"
+else
+  printf 'running_pid=none\n'
+fi
+printf 'kitty=%s\nmatugen=%s\nwallpaper=%s\n' "$(readlink -f "$HOME/.config/kitty" 2>/dev/null || true)" "${XDG_CACHE_HOME:-$HOME/.cache}/kdwm/theme/theme.json" "$(cat "${XDG_CACHE_HOME:-$HOME/.cache}/kdwm/state/current-wallpaper" 2>/dev/null || true)"
