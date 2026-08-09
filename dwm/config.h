@@ -39,10 +39,12 @@ static char dmenumon[2] = "0";
 static const char *dmenucmd[] = { "/usr/local/bin/kdwm-launcher", NULL };
 static const char *termcmd[] = { "kitty", NULL };
 static const char *wallpapercmd[] = { "/usr/local/bin/kdwm-wallpaper", "select", NULL };
+static const char *randomlocalwallpapercmd[] = { "/usr/local/bin/kdwm-wallpaper", "random-local", NULL };
 static const char *restartcmd[] = { "/usr/local/bin/kdwm-restart", NULL };
 static const Key keys[] = {
 	{ MODKEY, XK_p, spawn, {.v = dmenucmd} }, { MODKEY|ShiftMask, XK_Return, spawn, {.v = termcmd} },
 	{ MODKEY, XK_w, spawn, {.v = wallpapercmd} }, { MODKEY, XK_b, togglebar, {0} },
+	{ MODKEY|ShiftMask, XK_K, spawn, {.v = randomlocalwallpapercmd} },
 	{ MODKEY|ShiftMask, XK_r, spawn, {.v = restartcmd} },
 	{ MODKEY, XK_j, focusstack, {.i = +1} }, { MODKEY, XK_k, focusstack, {.i = -1} },
 	{ MODKEY, XK_i, incnmaster, {.i = +1} }, { MODKEY, XK_d, incnmaster, {.i = -1} },
