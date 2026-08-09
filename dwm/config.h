@@ -44,7 +44,7 @@ static const char *restartcmd[] = { "/usr/local/bin/kdwm-restart", NULL };
 static const Key keys[] = {
 	{ MODKEY, XK_p, spawn, {.v = dmenucmd} }, { MODKEY|ShiftMask, XK_Return, spawn, {.v = termcmd} },
 	{ MODKEY, XK_w, spawn, {.v = wallpapercmd} }, { MODKEY, XK_b, togglebar, {0} },
-	{ MODKEY|ShiftMask, XK_K, spawn, {.v = randomlocalwallpapercmd} },
+	{ MODKEY|ShiftMask, XK_k, spawn, {.v = randomlocalwallpapercmd} },
 	{ MODKEY|ShiftMask, XK_r, spawn, {.v = restartcmd} },
 	{ MODKEY, XK_j, focusstack, {.i = +1} }, { MODKEY, XK_k, focusstack, {.i = -1} },
 	{ MODKEY, XK_i, incnmaster, {.i = +1} }, { MODKEY, XK_d, incnmaster, {.i = -1} },
