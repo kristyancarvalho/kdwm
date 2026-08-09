@@ -154,12 +154,15 @@ DWM's `SIGUSR1` handler only marks a reload request. Its normal event loop reads
 kdwm-wallpaper refresh
 kdwm-wallpaper select
 kdwm-wallpaper random
+kdwm-wallpaper random-local
 kdwm-wallpaper set /path/to/image
 kdwm-wallpaper list
 kdwm-wallpaper current
 ```
 
 `Alt+w` opens the themed selector. The default provider/search is configured in `wallpaper/sources.json`. The release default is the dark, low-complexity Serial Experiments Lain preset [Wallhaven nrd3wq](https://whvn.cc/nrd3wq), downloaded into the per-user cache rather than redistributed.
+
+`kdwm-wallpaper random-local` selects a random JPEG, PNG, or WebP image from `~/Imagens/Wallpapers`, avoiding the active image when another valid file is available. Set `KDWM_WALLPAPER_DIR` to use another directory. The installer creates the default directory without adding personal wallpaper files.
 
 The native DWM bar keeps CPU, RAM, volume, cached `SP 23°C`-style temperature, adaptive battery state, and a 24-hour clock in that exact order. A battery segment appears only when Linux exposes a `BAT*` power-supply device; `BAT+` and `BAT=` distinguish charging and full states. Temperature comes from Open-Meteo at most every 20 minutes; a failed refresh keeps the last value or shows `--°C`. Network details remain in the Quickshell dashboard. Tags render as `I` through `IX` in fixed 52 px cells while `Alt+1..9` remains numeric.
 
@@ -169,6 +172,7 @@ The native DWM bar keeps CPU, RAM, volume, cached `SP 23°C`-style temperature, 
 | --- | --- |
 | `Alt+p` | Open the fuzzy Rofi application launcher |
 | `Alt+w` | Open the wallpaper selector |
+| `Alt+Shift+K` | Random local wallpaper and dynamic color update |
 | `Alt+Shift+Enter` | Open Kitty |
 | `Alt+j` / `Alt+k` | Focus next/previous client |
 | `Alt+h` / `Alt+l` | Change master width |
