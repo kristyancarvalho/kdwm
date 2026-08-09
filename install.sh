@@ -117,7 +117,7 @@ report_detection() {
 }
 
 install_dependencies() {
-  local packages=(base-devel libx11 libxinerama libxft freetype2 rofi picom feh jq curl python matugen ttf-jetbrains-mono)
+  local packages=(base-devel libx11 libxinerama libxft freetype2 rofi picom feh jq curl python matugen file ttf-jetbrains-mono)
   ((install_quickshell)) && packages+=(quickshell)
   ((install_kitty)) && packages+=(kitty)
   mapfile -t missing < <(pacman -T "${packages[@]}" 2>/dev/null || true)
@@ -174,7 +174,7 @@ if ((install_packages)); then
   install_dependencies
 fi
 
-run install -d -o "$target_user" -g "$target_group" "$target_home/.config" "$target_home/.local/bin" "$target_home/.local/share"
+run install -d -o "$target_user" -g "$target_group" "$target_home/.config" "$target_home/.local/bin" "$target_home/.local/share" "$target_home/Imagens/Wallpapers"
 link_user_path "$repo_dir" "$target_home/.local/share/kdwm"
 ((install_quickshell)) && link_user_path "$repo_dir/quickshell" "$target_home/.config/quickshell/kdwm"
 link_user_path "$repo_dir/picom/picom.conf" "$target_home/.config/picom/picom.conf"

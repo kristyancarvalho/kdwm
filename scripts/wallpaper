@@ -5,6 +5,7 @@ script_path=$(readlink -f "${BASH_SOURCE[0]}")
 repo_dir="$(cd -- "$(dirname -- "$script_path")/.." && pwd)"
 runtime_dir="${KDWM_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/kdwm}"
 wallpaper_dir="$runtime_dir/wallpapers"
+local_wallpaper_dir="${KDWM_WALLPAPER_DIR:-$HOME/Imagens/Wallpapers}"
 index="$wallpaper_dir/index.json"
 state="$runtime_dir/state/current-wallpaper"
 
@@ -45,12 +46,60 @@ default_wallpaper() {
 
 set_wallpaper() {
   local file=$1
-  file=$(realpath "$file")
-  [[ -f "$file" ]] || return 1
-  feh --no-fehbg --bg-fill "$file"
-  "$repo_dir/scripts/apply-theme" "$file"
+  file=$(realpath -e -- "$file") || { printf 'Wallpaper does not exist: %s\n' "$1" >&2; return 1; }
+  [[ -f "$file" && -r "$file" ]] || { printf 'Wallpaper is not a readable regular file: %s\n' "$file" >&2; return 1; }
+  feh --no-fehbg --bg-fill "$file" || { printf 'Could not apply wallpaper: %s\n' "$file" >&2; return 1; }
+  "$repo_dir/scripts/apply-theme" "$file" || { printf 'Could not apply theme for wallpaper: %s\n' "$file" >&2; return 1; }
   printf '%s\n' "$file" >"$state.tmp"
   mv "$state.tmp" "$state"
+}
+
+is_local_wallpaper() {
+  local file=$1 mime
+  case "${file##*.}" in
+    [Jj][Pp][Gg]|[Jj][Pp][Ee][Gg]|[Pp][Nn][Gg]|[Ww][Ee][Bb][Pp]) ;;
+    *) return 1 ;;
+  esac
+  mime=$(file --brief --mime-type -- "$file" 2>/dev/null) || return 1
+  case "$mime" in
+    image/jpeg|image/png|image/webp) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+random_local_wallpaper() {
+  local current= candidate
+  local -a available=()
+
+  [[ -d "$local_wallpaper_dir" ]] || {
+    printf 'Local wallpaper directory does not exist: %s\n' "$local_wallpaper_dir" >&2
+    return 1
+  }
+  command -v file >/dev/null || {
+    printf 'file is required to validate local wallpapers\n' >&2
+    return 1
+  }
+
+  while IFS= read -r -d '' candidate; do
+    is_local_wallpaper "$candidate" && available+=("$candidate")
+  done < <(find -P "$local_wallpaper_dir" -maxdepth 1 -type f ! -name '.*' \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) -print0)
+
+  ((${#available[@]})) || {
+    printf 'No supported local wallpapers in: %s\n' "$local_wallpaper_dir" >&2
+    return 1
+  }
+
+  current=
+  [[ -s "$state" ]] && current=$(realpath -e -- "$(<"$state")" 2>/dev/null || true)
+  if ((${#available[@]} > 1)) && [[ -n "$current" ]]; then
+    local -a alternatives=()
+    for candidate in "${available[@]}"; do
+      [[ $(realpath -e -- "$candidate") == "$current" ]] || alternatives+=("$candidate")
+    done
+    ((${#alternatives[@]})) && available=("${alternatives[@]}")
+  fi
+
+  set_wallpaper "${available[RANDOM % ${#available[@]}]}"
 }
 
 select_wallpaper() {
@@ -76,6 +125,7 @@ case "${1:-select}" in
   list) [[ -s "$index" ]] || refresh; jq -r '.items[] | "\(.id)\t\(.resolution)\t\(.short_url)"' "$index" ;;
   set) set_wallpaper "${2:?path required}" ;;
   random) [[ -s "$index" ]] || refresh; set_wallpaper "$(download "$(jq -r '.items | map(.id) | .[now | floor % length]' "$index")")" ;;
+  random-local) random_local_wallpaper ;;
   default) set_wallpaper "$(default_wallpaper)" ;;
   restore) restore_wallpaper ;;
   current) cat "$state" 2>/dev/null || true ;;
